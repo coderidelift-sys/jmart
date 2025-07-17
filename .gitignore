@@ -1,0 +1,5 @@
+# Abaikan folder vendor di root
+/vendor/
+
+# Abaikan semua folder vendor di dalam subfolder mana pun
+**/vendor/
