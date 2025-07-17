@@ -1,70 +1,88 @@
-###################
-What is CodeIgniter
-###################
+# JMART Online - Solusi Modern Toko & Koperasi Digital
 
-CodeIgniter is an Application Development Framework - a toolkit - for people
-who build web sites using PHP. Its goal is to enable you to develop projects
-much faster than you could if you were writing code from scratch, by providing
-a rich set of libraries for commonly needed tasks, as well as a simple
-interface and logical structure to access these libraries. CodeIgniter lets
-you creatively focus on your project by minimizing the amount of code needed
-for a given task.
+**JMART Online** adalah platform aplikasi web berbasis CodeIgniter yang dirancang untuk digitalisasi toko, koperasi, dan bisnis retail modern. Dengan fitur lengkap, tampilan profesional, dan pengalaman pengguna yang intuitif, JMART Online siap membantu Anda mengelola penjualan, inventori, kasir, kurir, hingga laporan keuangan secara efisien dan real-time.
 
-*******************
-Release Information
-*******************
+---
 
-This repo contains in-development code for future releases. To download the
-latest stable release please visit the `CodeIgniter Downloads
-<https://codeigniter.com/download>`_ page.
+## 🚀 Fitur Unggulan
 
-**************************
-Changelog and New Features
-**************************
+### Untuk Pengguna (User)
+- **Belanja Online Mudah**: Cari produk, filter kategori, dan nikmati promo menarik.
+- **Keranjang & Checkout Cepat**: Proses belanja yang simpel, dengan notifikasi stok otomatis.
+- **Pantau Pesanan**: Lacak status pesanan dari awal hingga diterima.
+- **Kritik & Saran**: Sampaikan feedback langsung dari aplikasi, bahkan terhubung ke WhatsApp!
 
-You can find a list of all changes for each release in the `user
-guide change log <https://github.com/bcit-ci/CodeIgniter/blob/develop/user_guide_src/source/changelog.rst>`_.
+### Untuk Admin
+- **Dashboard Powerful**: Statistik transaksi, grafik penjualan, dan notifikasi real-time.
+- **Manajemen Produk & Kategori**: Tambah, edit, import produk, atur promosi & harga grosir.
+- **Manajemen User & Staff**: Kelola akun kasir, kurir, dan anggota dengan mudah.
+- **Laporan Lengkap**: Omset, inventori, dan performa penjualan dalam satu klik.
 
-*******************
-Server Requirements
-*******************
+### Untuk Kasir
+- **Transaksi Cepat**: Input penjualan offline/online, hitung otomatis kembalian, dan cetak struk.
+- **Manajemen Stok**: Update stok langsung dari kasir, pantau barang laris & stok menipis.
 
-PHP version 5.6 or newer is recommended.
+### Untuk Kurir
+- **Scan Paket & Tracking**: Scan barcode, update status pengiriman, dan mapping lokasi.
+- **Dashboard Kurir**: Lihat misi aktif, performa 7 hari terakhir, dan statistik order sukses.
 
-It should work on 5.3.7 as well, but we strongly advise you NOT to run
-such old versions of PHP, because of potential security and performance
-issues, as well as missing features.
+### Fitur Lainnya
+- **Notifikasi Real-Time**: Integrasi Pusher untuk update status pesanan & transaksi.
+- **Tampilan Responsive & Modern**: Desain mobile-friendly, cocok untuk semua perangkat.
+- **Keamanan Data**: Sistem login multi-level (user, admin, kasir, kurir) dan validasi akses.
 
-************
-Installation
-************
+---
 
-Please see the `installation section <https://codeigniter.com/user_guide/installation/index.html>`_
-of the CodeIgniter User Guide.
+## 🌟 Kenapa JMART Online?
 
-*******
-License
-*******
+- **All-in-One**: Satu aplikasi untuk semua kebutuhan toko & koperasi digital.
+- **User Experience Juara**: Navigasi mudah, dashboard informatif, dan desain profesional.
+- **Mudah Dikembangkan**: Berbasis CodeIgniter, mudah di-custom sesuai kebutuhan bisnis Anda.
+- **Dukungan Komunitas**: Dokumentasi lengkap & komunitas aktif.
 
-Please see the `license
-agreement <https://github.com/bcit-ci/CodeIgniter/blob/develop/user_guide_src/source/license.rst>`_.
+---
 
-*********
-Resources
-*********
+## ⚡ Instalasi & Kebutuhan Sistem
 
--  `User Guide <https://codeigniter.com/docs>`_
--  `Language File Translations <https://github.com/bcit-ci/codeigniter3-translations>`_
--  `Community Forums <http://forum.codeigniter.com/>`_
--  `Community Wiki <https://github.com/bcit-ci/CodeIgniter/wiki>`_
--  `Community Slack Channel <https://codeigniterchat.slack.com>`_
+### Kebutuhan Server
+- **PHP**: Versi 8.0 atau lebih baru
+- **Database**: MySQL/MariaDB
+- **Ekstensi PHP**: `mbstring`, `curl`, `gd`, `intl`, `json`, `mysqli`, `openssl`, `xml`
+- **Web Server**: Apache/Nginx
 
-Report security issues to our `Security Panel <mailto:security@codeigniter.com>`_
-or via our `page on HackerOne <https://hackerone.com/codeigniter>`_, thank you.
+### Langkah Instalasi
 
-***************
-Acknowledgement
-***************
+1. **Clone Repository**
+   ```bash
+   git clone https://github.com/username/jmart-online.git
+   cd jmart-online
+   ```
 
-The CodeIgniter team would like to thank EllisLab, all the
-contributors to the CodeIgniter project and you, the CodeIgniter user.
+2. **Install Dependency Composer**
+   ```bash
+   composer install
+   ```
+
+3. **Buat Database & Import**
+   - Buat database baru (misal: `koperasi`)
+   - Import file SQL dari folder `/database/koperasi (1).sql` atau `/database/koperasi (2).sql`
+
+4. **Konfigurasi Koneksi Database**
+   - Edit file `application/config/database.php` sesuai setting server Anda.
+
+5. **Set Permissions**
+   - Pastikan folder `application/cache`, `application/logs`, dan `public/template/upload` dapat ditulis (writeable).
+
+6. **Jalankan Aplikasi**
+   - Akses melalui browser: `http://localhost/jmart-online`
+
+---
+
+## 💡 Kontribusi & Dukungan
+
+Kami terbuka untuk kontribusi, saran, dan pengembangan fitur baru! Silakan buat issue atau pull request di repository ini.
+
+---
+
+**JMART Online** – Digitalisasi Bisnis, Mudahkan Segalanya!  
+Solusi toko & koperasi kekinian, siap bersaing di era digital.
