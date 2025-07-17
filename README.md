@@ -54,7 +54,7 @@
 
 1. **Clone Repository**
    ```bash
-   git clone https://github.com/username/jmart-online.git
+   git clone https://github.com/coderidelift-sys/jmart.git
    cd jmart-online
    ```
 
@@ -74,7 +74,7 @@
    - Pastikan folder `application/cache`, `application/logs`, dan `public/template/upload` dapat ditulis (writeable).
 
 6. **Jalankan Aplikasi**
-   - Akses melalui browser: `http://localhost/jmart-online`
+   - Akses melalui browser: `http://localhost/jmart`
 
 ---
 
