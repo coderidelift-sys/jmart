@@ -319,8 +319,8 @@
                                         <th class="align-middle text-center">
                                             <select name="stock_filter" id="stock_filter" class="form-select">
                                                 <option value="">** Filter Stock</option>
-                                                <option value="down">Stock Dibawah 10</option>
-                                                <option value="up">Stock Diatas 10</option>
+												<option value="up">Terbanyak</option>
+												<option value="down">Tersedikit</option>
                                             </select>
                                         </th>
                                         <th class="align-middle text-center">

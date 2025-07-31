@@ -331,7 +331,7 @@ class Anggota extends CI_Controller
 						<li><a href="javascript:void(0)" class="dropdown-item" onclick="lihatDetail(' . $anggota->id_user . ')">Lihat Detail</a></li>
                         <li><a href="javascript::void(0)" class="dropdown-item" onclick="ubahAnggota(' . $anggota->id_user . ')">Edit User</a></li>
                         <li><a href="javascript::void(0)" class="dropdown-item" onclick="resetPassword(' . $anggota->id_user . ')">Reset Password</a></li>
-                        <li><a href="#" class="delete dropdown-item">Hapus User</a></li>
+                        <li><a href="javascript::void(0)" class="dropdown-item" onclick="deleteAnggota(' . $anggota->id_user . ')">Hapus User</a></li>
 					</ul>
 				</div>
 				',
@@ -463,13 +463,32 @@ class Anggota extends CI_Controller
         echo json_encode(['success' => true]);
     }
 
-    public function delete($id_user)
-    {
-        try {
-            $result = $this->M_Crud->hapus_data(array('id_user' => $id_user), 'tb_user');
-            echo json_encode(array('status' => 'success', 'message' => 'Data berhasil dihapus.'));
-        } catch (Exception $e) {
-            echo json_encode(array('status' => 'error', 'message' => $e->getMessage()));
-        }
-    }
+	public function delete($id_user)
+	{
+		try {
+			// Ambil semua rating user
+			$ratings = $this->db->get_where('tb_rating', ['id_user' => $id_user])->result_array();
+			foreach ($ratings as $rating) {
+				$this->M_Crud->hapus_data(['id_rating' => $rating['id_rating']], 'tb_rating_detail');
+			}
+			$this->M_Crud->hapus_data(['id_user' => $id_user], 'tb_rating');
+
+			// Hapus alamat user
+			$this->M_Crud->hapus_data(['id_user' => $id_user], 'tb_user_alamat');
+
+			// Ambil semua pemesanan user
+			$pemesanan = $this->db->get_where('tb_pemesanan', ['created_by' => $id_user])->result_array();
+			foreach ($pemesanan as $p) {
+				$this->M_Crud->hapus_data(['id_pemesanan' => $p['id_pemesanan']], 'tb_pemesanan_detail');
+			}
+			$this->M_Crud->hapus_data(['created_by' => $id_user], 'tb_pemesanan');
+
+			// Terakhir, hapus user
+			$this->M_Crud->hapus_data(['id_user' => $id_user], 'tb_user');
+
+			echo json_encode(['status' => 'success', 'message' => 'Data berhasil dihapus.']);
+		} catch (Exception $e) {
+			echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+		}
+	}
 }

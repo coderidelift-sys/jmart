@@ -176,6 +176,8 @@
         <div class="row">
             <div class="col-sm-12">
 
+				<div id="session_div"></div>
+
                 <?php if ($this->session->flashdata('error')) { ?>
                     <div class="alert alert-dismissible alert-danger">
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -739,30 +741,52 @@
         });
     }
 
-    function deleteAnggota(link) {
-        var idUser = link.getAttribute("data-id");
+    function deleteAnggota(idUser) {
+		Swal.fire({
+			title: 'Hapus Anggota?',
+			text: 'Data anggota akan dihapus secara permanen.',
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Ya, hapus!',
+			cancelButtonText: 'Batal',
+			confirmButtonColor: '#d33',
+			cancelButtonColor: '#6c757d',
+		}).then((result) => {
+			if (result.isConfirmed) {
+				$.ajax({
+					url: "<?php echo base_url('anggota/delete/'); ?>" + idUser,
+					type: "POST",
+					dataType: "json",
+					success: function (response) {
+						if (response.status === "success") {
+							$('#dataAnggota').DataTable().ajax.reload();
 
-        // Konfirmasi penghapusan dengan dialog konfirmasi JavaScript (Opsional)
-        var confirmation = confirm("Apakah Anda yakin ingin menghapus kasir ini?");
-        if (confirmation) {
-            $.ajax({
-                url: "<?php echo base_url('anggota/delete/'); ?>" + idUser,
-                type: "POST",
-                dataType: "json",
-                success: function(response) {
-                    if (response.status === "success") {
-                        $('#dataAnggota').DataTable().ajax.reload();
-                        toastr.success('Anggota Berhasil dihapus.');
-                    } else {
-                        toastr.error(response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert("Terjadi kesalahan: " + error);
-                }
-            });
-        }
-    }
+							Swal.fire({
+								icon: 'success',
+								title: 'Berhasil!',
+								text: 'Anggota berhasil dihapus.',
+								timer: 2000,
+								showConfirmButton: false
+							});
+						} else {
+							Swal.fire({
+								icon: 'error',
+								title: 'Gagal',
+								text: response.message
+							});
+						}
+					},
+					error: function (xhr, status, error) {
+						Swal.fire({
+							icon: 'error',
+							title: 'Terjadi kesalahan',
+							text: error
+						});
+					},
+				});
+			}
+		});
+	}
 
     function lihatDetail(id) {
         $.ajax({

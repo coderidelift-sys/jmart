@@ -1,6 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -83,7 +84,7 @@ class Product extends CI_Controller
 			$sheet->setCellValue('A' . $row, $no++);
 			$sheet->setCellValue('B' . $row, 'Semua Toko');
 			$sheet->setCellValue('C' . $row, $d['nama_barang']);
-			$sheet->setCellValue('D' . $row, $d['barcode']);
+			$sheet->setCellValueExplicit('D' . $row, $d['barcode'], DataType::TYPE_STRING);
 			$sheet->setCellValue('E' . $row, $d['nama_kategori_brg']);
 			$sheet->setCellValue('F' . $row, $d['nama_supplier']);
 			$sheet->setCellValue('G' . $row, $d['hpp_barang']);
@@ -1280,8 +1281,8 @@ class Product extends CI_Controller
 			)
 		);
 
-		$where = null;
-		if ($nama_barang_filter || $nama_kategori_filter || $stock_filter || $supplier_filter) {
+		$where = null; // Inisialisasi $where sebagai string kosong
+		if ($nama_barang_filter || $nama_kategori_filter || $supplier_filter) {
 			$where = "1"; // Menginisialisasi dengan 1 sehingga operasi AND berfungsi
 
 			if ($nama_kategori_filter) {
@@ -1292,20 +1293,20 @@ class Product extends CI_Controller
 				$where .= " AND (nama_barang LIKE '%" . $nama_barang_filter . "%' OR barcode LIKE '%" . $nama_barang_filter . "%')";
 			}
 
-			if ($stock_filter == "down") {
-				$where .= " AND stock_brg < 10";
-			}
-
-			if ($stock_filter == "up") {
-				$where .= " AND stock_brg >= 10 ";
-			}
-
 			if ($supplier_filter) {
 				$where .= " AND tb_barang.id_supplier = '" . $supplier_filter . "'";
 			}
 		}
 
-		$list = $this->Datatable_model->get_data('tb_barang', $columns, $joins, $filter, $this->input->post('search')['value'], $where, $this->input->post('start'), $this->input->post('length'));
+		if ($stock_filter) {
+			if ($stock_filter == "down") {
+				$order_by = ['stock_brg', 'ASC']; // Urutkan berdasarkan stock_brg
+			} elseif ($stock_filter == "up") {
+				$order_by = ['stock_brg', 'DESC']; // Urutkan berdasarkan stock_brg
+			}
+		}
+
+		$list = $this->Datatable_model->get_data('tb_barang', $columns, $joins, $filter, $this->input->post('search')['value'], $where, $this->input->post('start'), $this->input->post('length'), $order_by ?? ['id_brg', 'DESC']);
 
 		$data = array();
 		$no = $_POST['start'];
