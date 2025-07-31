@@ -1,6 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
+use Endroid\QrCode\QrCode;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -1145,27 +1146,23 @@ class Product extends CI_Controller
 
 				// Cek gambar
 				$lokasi_gambar_asal = $excel[11];
-				$path = ''; // Pastikan $path didefinisikan sesuai lokasi file
-				if (!file_exists($path . $lokasi_gambar_asal)) {
-					$gambar = 'default.png';
-				} else {
-					if ($lokasi_gambar_asal != "") {
-						$ekstensi = pathinfo($lokasi_gambar_asal, PATHINFO_EXTENSION);
-						$nama_acak = uniqid() . '.' . $ekstensi;
-						$lokasi_gambar_tujuan = FCPATH . 'public/template/upload/barang/' . $nama_acak;
+				if ($lokasi_gambar_asal != "") {
+					$gambar = $lokasi_gambar_asal;
+					// $ekstensi = pathinfo($lokasi_gambar_asal, PATHINFO_EXTENSION);
+					// $nama_acak = uniqid() . '.' . $ekstensi;
+					// $lokasi_gambar_tujuan = FCPATH . 'public/template/upload/barang/' . $nama_acak;
 
-						if (file_exists($path . substr($lokasi_gambar_asal, 2))) {
-							if (copy($lokasi_gambar_asal, $lokasi_gambar_tujuan)) {
-								$gambar = $nama_acak;
-							} else {
-								$gambar = 'default.png';
-							}
-						} else {
-							$gambar = 'default.png';
-						}
-					} else {
-						$gambar = "default.png";
-					}
+					// if (file_exists($path . substr($lokasi_gambar_asal, 2))) {
+					// 	if (copy($lokasi_gambar_asal, $lokasi_gambar_tujuan)) {
+					// 		$gambar = $nama_acak;
+					// 	} else {
+					// 		$gambar = 'default.png';
+					// 	}
+					// } else {
+					// 	$gambar = 'default.png';
+					// }
+				} else {
+					$gambar = "default.png";
 				}
 
 				// Simpan data barang
@@ -1350,6 +1347,7 @@ class Product extends CI_Controller
                         <li><a class="dropdown-item" href="' . base_url('product/edit/' . $barang->id_brg) . '" data-id="' . $barang->id_brg . '">&nbsp;Edit Produk</a></li>
                         <li><a class="dropdown-item" href="' . base_url('product/manajemen_stock/' . $barang->id_brg) . '">&nbsp;Stock Terintegrasi</a></li>
 						<li><a class="dropdown-item text-danger" data-id="' . $barang->id_brg . '" href="javascript:void(0);" onclick="deleteProduk(this);">&nbsp;Hapus Produk</a></li>
+						<li><a class="dropdown-item" href="' . base_url('product/cetak_label_produk/' . $barang->id_brg) . '" target="_blank">&nbsp;Cetak Label Produk</a></li>
 					</ul>
 				</div>
                 '
@@ -1364,6 +1362,32 @@ class Product extends CI_Controller
 			"data" => $data,
 		);
 		echo json_encode($output);
+	}
+
+	public function cetak_label_produk($id)
+	{
+		$this->load->library('pdf');
+		$this->load->library('session');
+		$this->load->model('M_Crud');
+		$this->load->helper('custom');
+		
+		$product = $this->M_Crud->show('tb_barang', ['id_brg' => $id])->row_array();
+
+		if (!$product) {
+			show_404();
+		}
+
+		$data['product'] = [
+			'nama_barang' => $product['nama_barang'],
+			'harga_jual_barang' => $product['harga_jual_barang'],
+			'harga_grosir' => $product['harga_grosir'] ?? null,
+			'barcode' => $product['barcode'] ?? '0000000000000', // ganti dengan kolom barcode di DB
+			'ukuran' => $product['ukuran'] ?? '', // misalnya '240 ML'
+		];
+
+		$this->pdf->load_view('level/admin/product_label_pdf', $data);
+		$this->pdf->filename = 'label_rak_' . $product['nama_barang'] . '.pdf';
+		$this->pdf->stream($this->pdf->filename, array("Attachment" => false));
 	}
 
 	public function detail($id)

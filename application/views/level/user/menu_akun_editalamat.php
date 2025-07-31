@@ -79,21 +79,19 @@
 	</div>
 </nav>
 <section class="mt-4 mb-4">
-	<div class="container">
-		<?php if ($jumlah <= 0) : ?>
-			<div class="misc-wrapper mt-3 text-center">
-				<h3 class="mb-2 mx-2">Alamat Tidak Ditemukan</h3>
-				<p class="mb-4 mx-2">Silahkan menambahkan alamat terlebih dahulu sebelum melajutkan belanja.</p>
-				<a href="#" data-bs-toggle="modal" data-bs-target="#tambah" class="btn btn-primary justify-content-center text-white text-center">Tambah Alamat</a>
-				<div class="mt-3">
-					<img src="<?= base_url() ?>public/template/img/illustrations/undraw_page_not_found_re_e9o6.svg" alt="page-misc-error-light" width="500" class="img-fluid" data-app-dark-img="illustrations/page-misc-error-dark.png" data-app-light-img="illustrations/page-misc-error-light.png">
-				</div>
-			</div>
-		<?php else : ?>
-			<div class="card mt-4">
-				<div class="card-header">
-					<h6 class="card-title">Set Alamat Utama</h6>
-				</div>
+   <div class="container">
+      <?php if ($jumlah <= 0) : ?>
+         <div class="misc-wrapper mt-3 text-center">
+            <h3 class="mb-2 mx-2">Alamat Tidak Ditemukan</h3>
+            <p class="mb-4 mx-2">Silahkan menambahkan alamat terlebih dahulu untuk melengkapi data profil kamu sebelum melanjutkan belanja.</p>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#tambah" class="btn btn-primary justify-content-center text-white text-center">KLIK INI UNTUK TAMBAH ALAMAT </a>
+           
+         </div>
+      <?php else : ?>
+         <div class="card mt-4">
+            <div class="card-header">
+               <h6 class="card-title">Set Alamat Utama</h6>
+            </div>
 				<div class="card-body">
 					<?php foreach ($alamat as $key => $a) : ?>
 						<div class="row">
@@ -136,6 +134,10 @@
 				<h5 class="modal-title" id="exampleModalLabel">Tambah Alamat Baru</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
+				<!-- Card informasi -->
+			<div class="alert alert-info mx-3 mt-3" role="alert">
+				Untuk sementara, abaikan lokasi maps yang tampil.
+			</div>
 			<form action="<?= base_url('akun/alamat_tambah') ?>" method="POST">
 				<div class="modal-body" style=" max-height: calc(100vh - 200px);overflow-y: auto;">
 					<div class="mb-3">
@@ -161,7 +163,7 @@
 						<select required name="select_desa" id="select_desa" class="form-select">
 							<option selected disabled>Pilih Desa</option>
 						</select>
-						<textarea style="border-radius: 2.5px;" name="detail_lainnya" id="detail_lainnya" class="form-control" placeholder="Detail Lainnya"></textarea>
+						<textarea style="border-radius: 2.5px;" name="detail_lainnya" id="detail_lainnya" class="form-control" placeholder="Misal : Blok G6 No 12 RT 001 RW 002"></textarea>
 					</div>
 					<div class="mb-3">
 						<div id="map" style="width: 100%;"></div>

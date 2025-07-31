@@ -3,3 +3,7 @@
 
 # Abaikan semua folder vendor di dalam subfolder mana pun
 **/vendor/
+
+.env
+
+composer.lock
