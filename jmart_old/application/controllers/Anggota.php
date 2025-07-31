@@ -229,14 +229,21 @@ class Anggota extends CI_Controller
         $tahun = $this->input->post('tahun');
         $tanggal_range = $this->input->post('tanggal_range');
 
-        $columns = 'id_user, nama_member, wa_member, nomor_induk, level, created_at, status_registrasi, avatar';
+        $columns = 'id_user, nama_member, wa_member, nomor_induk, level, created_at, status_registrasi, avatar, updated_at';
         $filter = array('nama_member', 'wa_member', 'nomor_induk');
         $joins = array();
 
         $where = "level = 'User'"; // Kondisi default
 
         if ($nama_member) {
-            $where .= " AND nama_member LIKE '%" . $nama_member . "%'";
+			if($nama_member == 'belum'){
+				$where .= " AND updated_at IS NULL
+				AND id_user NOT IN (
+                	SELECT id_user FROM tb_user_alamat
+            	)";
+			} else {
+				$where .= " AND nama_member LIKE '%" . $nama_member . "%'";
+			}
         }
 
         if ($wa_member) {
@@ -289,11 +296,17 @@ class Anggota extends CI_Controller
                 ->get('tb_pesanan');
 
             $total_grand_total3 = ($query3->num_rows() > 0) ? $query3->row()->grand_total : 0;
+			$nama_member_label = $anggota->nama_member;
+			
+			$countAlamat = $this->db->get_where('tb_user_alamat', ['id_user' => $anggota->id_user])->num_rows();
+			if ($countAlamat < 0 || $anggota->updated_at == null) {
+				$nama_member_label = $nama_member_label . ' <small><span class="badge bg-danger-lt">Belum tambah alamat dan atau kata sandi</span></small>';
+			}
 
             $no++;
             $row = array(
                 $no,
-                $anggota->nama_member,
+                $nama_member_label,
                 $anggota->wa_member,
                 $anggota->nomor_induk,
                 "

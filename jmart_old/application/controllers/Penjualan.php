@@ -164,6 +164,30 @@ class Penjualan extends CI_Controller
 					style=\"cursor: pointer\">
 			";
 
+			$listBarcode = "";
+			$listBarang = "";
+
+			$barang = $this->M_Crud->all_data('tb_pesanan_detail')
+				->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg')
+				->where('tb_pesanan_detail.id_pesanan', $pesanan->id_pesanan)
+				->get()
+				->result();
+			foreach ($barang as $item) {
+				$barcode = $item->barcode ?: "-";
+				$class = 'secondary';
+				if($item->barcode != '-'){
+					$class = 'primary';
+				}
+				$listBarcode .= "<span class='badge text-white bg-{$class}-lt'>{$barcode}</span> <br>";
+				$listBarang .= "<span class='badge text-white bg-secondary-lt'>{$item->nama_barang} ({$item->jumlah_jual})</span> ";
+			}
+			if (empty($listBarang)) {
+				$listBarang = "<span class='badge text-white bg-secondary-lt'>Tidak Tersedia</span>";
+			}
+			if (empty($listBarcode)) {
+				$listBarcode = "<span class='badge text-white bg-secondary-lt'>Tidak Tersedia</span>";
+			}
+
 			$no++;
 			$row = array(
 				$no,
@@ -191,6 +215,8 @@ class Penjualan extends CI_Controller
 				$name,
 				$nomor_induk,
 				$pesanan->id_pesanan,
+				$listBarcode,
+				$listBarang,
 				date('d/m/Y H:i:s', strtotime($pesanan->tgl_pesanan)),
 				$status . "<br><i class='text-info fw-bold'>" . ucwords($pesanan->metode_bayar) . "</i>",
 				$pembayaran,

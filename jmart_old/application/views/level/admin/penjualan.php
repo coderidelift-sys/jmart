@@ -503,6 +503,8 @@
 										<th>Customer</th>
 										<th>NIK</th>
 										<th>ID Transaksi</th>
+										<th>Barcode</th>
+										<th>Barang</th>
 										<th>Tanggal</th>
 										<th>Pesanan</th>
 										<th>Pembayaran</th>
@@ -1600,18 +1602,26 @@ complete: function () {
 				},
 				{
 					"data": 6,
-					"className": "text-left align-middle dt-nowrap",
+					"className": "text-left align-middle dt-wrap"
 				},
 				{
 					"data": 7,
-					"className": "text-center align-middle text-nowrap",
+					"className": "text-left align-middle dt-wrap"
 				},
 				{
 					"data": 8,
-					"className": "text-center align-middle text-nowrap",
+					"className": "text-left align-middle dt-nowrap",
 				},
 				{
 					"data": 9,
+					"className": "text-center align-middle text-nowrap",
+				},
+				{
+					"data": 10,
+					"className": "text-center align-middle text-nowrap",
+				},
+				{
+					"data": 11,
 					"className": "text-left align-middle text-nowrap",
 				},
 			],

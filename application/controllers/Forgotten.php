@@ -34,9 +34,9 @@ class Forgotten extends CI_Controller
 			if (count($check) >= 1) {
 				$mail_config['smtp_host'] = 'smtp.gmail.com';
 				$mail_config['smtp_port'] = '587';
-				$mail_config['smtp_user'] = 'rifkilhokseumawe2484@gmail.com';
+				$mail_config['smtp_user'] = 'jmartapp7@gmail.com';
 				$mail_config['_smtp_auth'] = TRUE;
-				$mail_config['smtp_pass'] = 'bcjqwtxfihhmjvcd';
+				$mail_config['smtp_pass'] = 'vguwtvtpfddlafxg';
 				$mail_config['smtp_crypto'] = 'tls';
 				$mail_config['protocol'] = 'smtp';
 				$mail_config['mailtype'] = 'html';
@@ -46,7 +46,7 @@ class Forgotten extends CI_Controller
 				$this->email->initialize($mail_config);
 				$this->email->set_newline("\r\n");
 
-				$this->email->from('rifkilhokseumawe2484@gmail.com', 'JMART APP');
+				$this->email->from('jmartapp7@gmail.com', 'JMART APP');
 				$this->email->to($emailto);
 				$this->email->subject('JMART RESET PASSWORD');
 				// $message = "<p>Kami mendengar bahwa Anda kehilangan kata sandi JMART Anda. Mohon maaf tentang hal tersebut!</p>";

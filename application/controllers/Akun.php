@@ -397,11 +397,11 @@ class Akun extends CI_Controller
 		if ($this->form_validation->run() == true) {
 			$data = [
 				'username' => $this->input->post('username'),
-				'nomor_induk' => $this->input->post('nomor_induk'),
-				'nomor_induk' => $this->input->post('nomor_induk'),
+				// 'nomor_induk' => $this->input->post('nomor_induk'),
 				'dept' => $this->input->post('dept'),
 				'email_member' => $this->input->post('email_member'),
 				'nama_member' => $this->input->post('nama_member'),
+				'wa_member' => $this->input->post('wa_member'),
 			];
 			$this->M_Crud->update_data(['id_user' => $id], $data, 'tb_user');
 

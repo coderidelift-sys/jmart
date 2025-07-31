@@ -266,6 +266,12 @@ class Akun extends CI_Controller
 			$this->form_validation->set_rules('email_member', 'Email Member', 'trim|required|min_length[1]|max_length[120]');
 		}
 
+		if ($_POST['dept'] !== $data['dept']) {
+			$this->form_validation->set_rules('dept', 'Departemen', 'trim|required[tb_user.dept]');
+		} else {
+			$this->form_validation->set_rules('dept', 'Departemen', 'trim|required');
+		}
+
 		$this->form_validation->set_message('required', 'Kolom {field} harus diisi.');
 		$this->form_validation->set_message('min_length', 'Kolom {field} harus memiliki panjang minimal {param} karakter.');
 		$this->form_validation->set_message('max_length', 'Kolom {field} harus memiliki panjang maksimal {param} karakter.');
@@ -273,10 +279,11 @@ class Akun extends CI_Controller
 		if ($this->form_validation->run() == true) {
 			$data = [
 				'username' => $this->input->post('username'),
-				'nomor_induk' => $this->input->post('nomor_induk'),
-				'wa_member' => $this->input->post('wa_member'),
+				// 'nomor_induk' => $this->input->post('nomor_induk'),
+				'dept' => $this->input->post('dept'),
 				'email_member' => $this->input->post('email_member'),
 				'nama_member' => $this->input->post('nama_member'),
+				'wa_member' => $this->input->post('wa_member'),
 			];
 			$this->M_Crud->update_data(['id_user' => $id], $data, 'tb_user');
 

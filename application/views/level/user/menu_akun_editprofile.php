@@ -237,7 +237,7 @@ complete: function () {
 					Swal.fire({
 						title: 'Berhasil!',
 						text: response.message,
-						type: 'success',
+						icon: 'success',
 						customClass: {
 							confirmButton: 'btn btn-success'
 						},
@@ -249,8 +249,8 @@ complete: function () {
 				} else {
 					Swal.fire({
 						title: 'Failed!',
-						text: response.message,
-						type: 'error',
+						html: response.message,
+						icon: 'error',
 						customClass: {
 							confirmButton: 'btn btn-danger'
 						},

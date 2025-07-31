@@ -1404,7 +1404,8 @@
 
     $(document).on('click', '.halaman', function() {
         var page = $(this).attr("id");
-        load_data('', page);
+		var query = $('#search').val();
+        load_data(query, page);
     });
 
     $('#search').keyup(function() {

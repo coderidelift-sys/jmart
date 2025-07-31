@@ -979,8 +979,11 @@ class Product extends CI_Controller
 				'hpp_barang' => $hpp,
 				'markup_barang' => $markup_barang,
 				'harga_jual_barang' => $harga_jual_barang,
-				'gambar_barang' => $nama_gambar,
 			);
+
+			if($nama_gambar != "default.png") {
+				$data['gambar_barang'] = $nama_gambar; // Hanya update gambar jika ada yang diunggah
+			}
 
 			$barang = $this->M_Crud->show('tb_barang', ['id_brg' => $id])->row_array();
 			$prev_hpp_barang = $barang['hpp_barang'];
