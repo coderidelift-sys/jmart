@@ -452,8 +452,17 @@ class Penjualan extends CI_Controller
 		if ($id_user_result) {
 			$id_user = $id_user_result['id_user'];
 
-			$start_date = date('Y-m-16'); // tanggal 16 bulan ini
-			$end_date = date('Y-m-15', strtotime('+1 month')); // tanggal 15 bulan depan
+			$day = date('d');
+
+			if ((int)$day >= 16) {
+				// Jika hari >= 16, berarti periode adalah 16 bulan ini sampai 15 bulan depan
+				$start_date = date('Y-m-16');
+				$end_date = date('Y-m-15', strtotime('+1 month'));
+			} else {
+				// Jika hari < 16, berarti periode adalah 16 bulan lalu sampai 15 bulan ini
+				$start_date = date('Y-m-16', strtotime('-1 month'));
+				$end_date = date('Y-m-15');
+			}
 
 			$this->db->select_sum('grand_total', 'total_bulan_ini');
 			$this->db->from('tb_pesanan');
@@ -468,7 +477,6 @@ class Penjualan extends CI_Controller
 			return 0; // Jika id_user tidak ditemukan
 		}
 	}
-
 
 	public function siapkan($id)
 	{

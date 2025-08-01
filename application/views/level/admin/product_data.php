@@ -194,7 +194,7 @@
                         </div>
                     </div>
                     <div class="card-body text-white">
-                        Total Produk
+                        Total Produk Aktif
                         <h2>
                             <?= number_format($total_produk) ?>
                         </h2>
@@ -282,6 +282,7 @@
                                         <th style="text-align: left;">HPP</th>
                                         <th style="text-align: left;">Harga Jual</th>
                                         <th>Stock</th>
+                                        <th>Status</th>
                                         <th width="20">Action</th>
                                     </tr>
                                     <tr>
@@ -321,6 +322,13 @@
                                                 <option value="">** Filter Stock</option>
 												<option value="up">Terbanyak</option>
 												<option value="down">Tersedikit</option>
+                                            </select>
+                                        </th>
+                                        <th class="align-middle text-center">
+                                            <select name="status_filter" id="status_filter" class="form-select">
+                                                <option value="">** Semua</option>
+												<option value="aktif">Aktif</option>
+												<option value="arsip">Arsip</option>
                                             </select>
                                         </th>
                                         <th class="align-middle text-center">
@@ -404,6 +412,7 @@
                     d.kategori = $('#nama_kategori_filter').val();
                     d.stock = $("#stock_filter").val();
                     d.supplier = $("#nama_supplier_filter").val();
+                    d.status = $("#status_filter").val();
                 }
             },
             columns: [{
@@ -442,6 +451,10 @@
                     data: "8",
                     className: "text-center align-middle dt-nowrap"
                 },
+                {
+                    data: "9",
+                    className: "text-center align-middle dt-nowrap"
+                },
             ]
         });
 
@@ -454,6 +467,10 @@
         });
 
         $('#stock_filter').on('input', function() {
+            $('#dataBarang').DataTable().ajax.reload();
+        });
+
+        $('#status_filter').on('input', function() {
             $('#dataBarang').DataTable().ajax.reload();
         });
 
@@ -530,7 +547,7 @@ complete: function () {
             confirmButtonText: 'Ya, Ekspor'
         }).then((result) => {
             if (result.isConfirmed) {
-                exportData(document.querySelector('#stock_filter').value);
+                exportData();
             }
         });
     });

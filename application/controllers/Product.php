@@ -59,6 +59,7 @@ class Product extends CI_Controller
 			$this->db->join('tb_kategori', 'tb_barang.id_kategori_brg = tb_kategori.id_kategori_brg', 'left');
 			$this->db->join('tb_supplier', 'tb_barang.id_supplier = tb_supplier.id_supplier', 'left');
 			$this->db->join('tb_satuan', 'tb_barang.id_satuan = tb_satuan.id_satuan', 'left');
+			$this->db->where('tb_barang.status', 'aktif'); // Hanya ambil barang yang aktif
 			$data = $this->db->get()->result_array();
 		} elseif ($stock_filter === 'down') {
 			$this->db->select('*, nama_kategori_brg, nama_supplier, nama_satuan');
@@ -233,7 +234,7 @@ class Product extends CI_Controller
 
 		// Ambil nama barang berdasarkan ID
 		$this->load->model('Datatable_model'); // Load model jika belum
-		$barang = $this->db->get_where('tb_barang', ['id_brg' => $id])->row();
+		$barang = $this->db->get_where('tb_barang', ['id_brg' => $id, 'status' => 'aktif'])->row();
 
 		if (!$barang) {
 			show_error('Barang tidak ditemukan.', 404);
@@ -457,6 +458,7 @@ class Product extends CI_Controller
 		if ($id_opname) {
 			$where = "id_opname LIKE '%" . $id_opname . "%'";
 		}
+		// $where .= " AND status aktif"; // Hanya ambil data yang aktif
 
 		$list = $this->Datatable_model->get_data('tb_opname_fisik', $columns, $joins, $filter, $this->input->post('search')['value'], $where, null, null, ['id_opname_fisik', 'DESC']);
 
@@ -507,9 +509,11 @@ class Product extends CI_Controller
 		);
 
 		$id_opname = $this->input->post('id_opname');
+		$where = '1';
 		if ($id_opname) {
-			$where = "id_opname LIKE '%" . $id_opname . "%'";
+			$where .= " AND id_opname LIKE '%" . $id_opname . "%'";
 		}
+		$where .= " AND status aktif"; // Hanya ambil data yang aktif
 
 		$list = $this->Datatable_model->get_data('tb_opname_rusak', $columns, $joins, $filter, $this->input->post('search')['value'], $where, null, null, ['id_opname_rusak', 'DESC']);
 
@@ -588,7 +592,7 @@ class Product extends CI_Controller
 		$id = $this->input->post('id');
 		try {
 			$check = $this->M_Crud->all_data('tb_opname_fisik')->where('id_opname', $id_opname)->where('id_brg', $id)->count_all_results();
-			$barang = $this->M_Crud->show('tb_barang', ['id_brg' => $id])->row_array();
+			$barang = $this->M_Crud->show('tb_barang', ['id_brg' => $id, 'status' => 'aktif'])->row_array();
 
 			if ($check >= 1) {
 				$response = array(
@@ -629,7 +633,7 @@ class Product extends CI_Controller
 		$id = $this->input->post('id');
 		try {
 			$check = $this->M_Crud->all_data('tb_opname_rusak')->where('id_opname', $id_opname)->where('id_brg', $id)->count_all_results();
-			$barang = $this->M_Crud->show('tb_barang', ['id_brg' => $id])->row_array();
+			$barang = $this->M_Crud->show('tb_barang', ['id_brg' => $id, 'status' => 'aktif'])->row_array();
 
 			if ($check >= 1) {
 				$response = array(
@@ -730,10 +734,14 @@ class Product extends CI_Controller
 		}
 
 		if ($check['tipe_opname'] == "Stock Opname") {
-			$data['produk'] = $this->M_Crud->all_data('tb_opname_fisik')->join('tb_barang', 'tb_barang.id_brg = tb_opname_fisik.id_brg')->where('id_opname', $id)->get()->result_array();
+			$data['produk'] = $this->M_Crud->all_data('tb_opname_fisik')->join('tb_barang', 'tb_barang.id_brg = tb_opname_fisik.id_brg')->where('id_opname', $id)
+			->where('tb_barang.status', 'aktif')
+			->get()->result_array();
 			$this->load->view('level/admin/product_opname_detail_fisik', $data);
 		} else {
-			$data['produk'] = $this->M_Crud->all_data('tb_opname_rusak')->join('tb_barang', 'tb_barang.id_brg = tb_opname_rusak.id_brg')->where('id_opname', $id)->get()->result_array();
+			$data['produk'] = $this->M_Crud->all_data('tb_opname_rusak')->join('tb_barang', 'tb_barang.id_brg = tb_opname_rusak.id_brg')->where('id_opname', $id)
+			->where('tb_barang.status', 'aktif')
+			->get()->result_array();
 			$this->load->view('level/admin/product_opname_detail_spoil', $data);
 		}
 	}
@@ -840,10 +848,16 @@ class Product extends CI_Controller
 
 	public function index()
 	{
-		$data['total_produk'] = $this->M_Crud->count('tb_barang');
-		$data['total_promo'] = $this->M_Crud->all_data('tb_barang')->where('promo_brg', 'On')->count_all_results();
-		$data['total_alert'] = $this->M_Crud->all_data('tb_barang')->where('stock_brg <=', 5)->count_all_results();
-		$data['total_nogambar'] = $this->M_Crud->all_data('tb_barang')->where('gambar_barang', 'default.png')->count_all_results();
+		$data['total_produk'] = $this->M_Crud->count_rows('tb_barang', ['status' => 'aktif']);
+		$data['total_promo'] = $this->M_Crud->all_data('tb_barang')
+		->where('status', 'aktif')
+		->where('promo_brg', 'On')->count_all_results();
+		$data['total_alert'] = $this->M_Crud->all_data('tb_barang')
+		->where('status', 'aktif')
+		->where('stock_brg <=', 5)->count_all_results();
+		$data['total_nogambar'] = $this->M_Crud->all_data('tb_barang')
+		->where('status', 'aktif')
+		->where('gambar_barang', 'default.png')->count_all_results();
 		$data['kategori'] = $this->M_Crud->tampil_data('tb_kategori')->result_array();
 		$data['satuan'] = $this->M_Crud->tampil_data('tb_satuan')->result_array();
 		$data['supplier'] = $this->M_Crud->tampil_data('tb_supplier')->result_array();
@@ -946,6 +960,7 @@ class Product extends CI_Controller
 		$markup_barang = $this->input->post('markup_barang');
 		$ppn_barang = $this->input->post('ppn_barang');
 		$harga_jual_barang = $this->input->post('total_jual');
+		$status = $this->input->post('status');
 
 		try {
 			// Inisialisasi nama gambar dengan nama gambar default
@@ -981,6 +996,7 @@ class Product extends CI_Controller
 				'hpp_barang' => $hpp,
 				'markup_barang' => $markup_barang,
 				'harga_jual_barang' => $harga_jual_barang,
+				'status' => $status,
 			);
 
 			if($nama_gambar != "default.png") {
@@ -1256,9 +1272,10 @@ class Product extends CI_Controller
 		$nama_barang_filter = $this->input->post('nama');
 		$nama_kategori_filter = $this->input->post('kategori');
 		$stock_filter = $this->input->post('stock');
+		$status_filter = $this->input->post('status');
 		$supplier_filter = $this->input->post('supplier');
 
-		$columns = 'id_brg, tb_barang.id_supplier, nama_barang, nama_supplier, barcode, tb_kategori.id_kategori_brg, nama_kategori_brg, nama_satuan, hpp_barang, markup_barang, harga_jual_barang, stock_brg, gambar_barang';
+		$columns = 'id_brg, tb_barang.id_supplier, nama_barang, nama_supplier, barcode, tb_kategori.id_kategori_brg, nama_kategori_brg, nama_satuan, hpp_barang, markup_barang, harga_jual_barang, stock_brg, gambar_barang, status';
 		$filter = array('nama_barang', 'barcode');
 		$joins = array(
 			array(
@@ -1279,7 +1296,7 @@ class Product extends CI_Controller
 		);
 
 		$where = null;
-		if ($nama_barang_filter || $nama_kategori_filter || $supplier_filter) {
+		if ($nama_barang_filter || $nama_kategori_filter || $supplier_filter || $status_filter) {
 			$where = "1"; // Menginisialisasi dengan 1 sehingga operasi AND berfungsi
 
 			if ($nama_kategori_filter) {
@@ -1292,6 +1309,14 @@ class Product extends CI_Controller
 
 			if ($supplier_filter) {
 				$where .= " AND tb_barang.id_supplier = '" . $supplier_filter . "'";
+			}
+
+			if ($status_filter) {
+				if ($status_filter == "aktif") {
+					$where .= " AND status = 'Aktif'";
+				} elseif ($status_filter == "arsip") {
+					$where .= " AND status = 'arsip'";
+				}
 			}
 		}
 
@@ -1316,6 +1341,7 @@ class Product extends CI_Controller
 				$gambar = 'public/template/upload/barang/default.png';
 			}
 			$kelas_css = ($barang->stock_brg < 10) ? 'text-danger fw-bold' : 'text-success fw-bold';
+			$isArchived = ($barang->status == 'arsip') ? 'text-danger fw-bold' : 'text-success fw-bold';
 			$no++;
 			$row = array(
 				$no,
@@ -1331,6 +1357,7 @@ class Product extends CI_Controller
 				"Rp. " . number_format($barang->hpp_barang),
 				"Rp. " . number_format($barang->harga_jual_barang),
 				'<span class="' . $kelas_css . '">' . $barang->stock_brg . ' ' . $barang->nama_satuan . '</span>',
+				'<span class="' . $isArchived . '">' . ucfirst($barang->status) . '</span>',
 				'
                 <div class="btn-group">
 					<button type="button" class="btn btn-sm btn-secondary text-uppercase dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -1398,7 +1425,9 @@ class Product extends CI_Controller
 
 	public function manajemen_stock($id)
 	{
-		$data['barang'] = $this->M_Crud->all_data('tb_barang')->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg')->join('tb_supplier', 'tb_supplier.id_supplier = tb_barang.id_supplier', 'left')->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')->where('tb_barang.id_brg', $id)->get()->row_array();
+		$data['barang'] = $this->M_Crud->all_data('tb_barang')->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg')->join('tb_supplier', 'tb_supplier.id_supplier = tb_barang.id_supplier', 'left')->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')->where('tb_barang.id_brg', $id)
+		->where('tb_barang.status', 'aktif')
+		->get()->row_array();
 		$this->load->view('level/admin/product_stock_manajemen', $data);
 	}
 
@@ -1430,7 +1459,15 @@ class Product extends CI_Controller
 			$keyword = "";
 		}
 
-		$data = $this->M_Crud->all_data('tb_barang')->like('nama_barang', $keyword)->or_like('barcode', $keyword)->get()->result_array();
+		$data = $this->M_Crud->all_data('tb_barang')
+			->group_start()
+				->like('nama_barang', $keyword)
+				->or_like('barcode', $keyword)
+			->group_end()
+			->where('status', 'aktif')
+			->get()
+			->result_array();
+
 		echo json_encode($data);
 	}
 
@@ -1524,7 +1561,7 @@ class Product extends CI_Controller
 			),
 		);
 
-		$where = null;
+		$where = "1 AND tb_barang.status = 'aktif'"; // Pastikan hanya mengambil barang yang aktif
 
 		$list = $this->Datatable_model->get_data('tb_pemesanan_temp', $columns, $joins, $filter, $this->input->post('search')['value'], $where, null, null, ['id_pemesanan_temp', 'DESC']);
 
@@ -1572,6 +1609,8 @@ class Product extends CI_Controller
 		);
 
 		$where = "id_pemesanan = " . $id;
+		// Pastikan hanya mengambil barang yang aktif
+		$where .= " AND tb_barang.status = 'aktif'";
 
 		$list = $this->Datatable_model->get_data('tb_pemesanan_detail', $columns, $joins, $filter, $this->input->post('search')['value'], $where, null, null, ['id_pemesanan_detail', 'DESC']);
 
@@ -1992,14 +2031,18 @@ class Product extends CI_Controller
 
 	public function lihat_pemesanan($id)
 	{
-		$data['produk'] = $this->M_Crud->all_data('tb_pemesanan_detail')->join('tb_pemesanan', 'tb_pemesanan.id_pemesanan = tb_pemesanan_detail.id_pemesanan')->join('tb_barang', 'tb_barang.id_brg = tb_pemesanan_detail.id_brg')->where('tb_pemesanan_detail.id_pemesanan', $id)->get()->result_array();
+		$data['produk'] = $this->M_Crud->all_data('tb_pemesanan_detail')->join('tb_pemesanan', 'tb_pemesanan.id_pemesanan = tb_pemesanan_detail.id_pemesanan')->join('tb_barang', 'tb_barang.id_brg = tb_pemesanan_detail.id_brg')
+		->where('tb_barang.status', 'aktif')
+		->where('tb_pemesanan_detail.id_pemesanan', $id)->get()->result_array();
 		$data['pemesanan'] = $this->M_Crud->all_data('tb_pemesanan')->join('tb_supplier', 'tb_supplier.id_supplier = tb_pemesanan.id_supplier', 'left')->join('tb_kasir', 'tb_kasir.id_kasir = tb_pemesanan.received_by', 'left')->where('id_pemesanan', $id)->get()->row_array();
 		$this->load->view('level/admin/product_pemesanan_lihat', $data);
 	}
 
 	public function cetak_pemesanan($id)
 	{
-		$data['produk'] = $this->M_Crud->all_data('tb_pemesanan_detail')->join('tb_pemesanan', 'tb_pemesanan.id_pemesanan = tb_pemesanan_detail.id_pemesanan')->join('tb_barang', 'tb_barang.id_brg = tb_pemesanan_detail.id_brg')->where('tb_pemesanan_detail.id_pemesanan', $id)->get()->result_array();
+		$data['produk'] = $this->M_Crud->all_data('tb_pemesanan_detail')->join('tb_pemesanan', 'tb_pemesanan.id_pemesanan = tb_pemesanan_detail.id_pemesanan')->join('tb_barang', 'tb_barang.id_brg = tb_pemesanan_detail.id_brg')
+		->where('tb_barang.status', 'aktif')
+		->where('tb_pemesanan_detail.id_pemesanan', $id)->get()->result_array();
 		$data['pemesanan'] = $this->M_Crud->all_data('tb_pemesanan')->join('tb_supplier', 'tb_supplier.id_supplier = tb_pemesanan.id_supplier', 'left')->join('tb_kasir', 'tb_kasir.id_kasir = tb_pemesanan.received_by', 'left')->where('id_pemesanan', $id)->get()->row_array();
 		$this->load->view('level/admin/product_pemesanan_cetak', $data);
 	}
@@ -2052,13 +2095,15 @@ class Product extends CI_Controller
 
 	public function grosir()
 	{
-		$data['grosir'] = $this->M_Crud->all_data('tb_barang')->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg', 'left')->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')->where('grosir_brg', 'On')->get()->result_array();
+		$data['grosir'] = $this->M_Crud->all_data('tb_barang')->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg', 'left')->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')
+		->where('status', 'aktif')
+		->where('grosir_brg', 'On')->get()->result_array();
 		$this->load->view('level/admin/product_grosir', $data);
 	}
 
 	public function grosir_temp()
 	{
-		$columns = 'tb_grosir_temp.id_brg, id_grosir_temp, nama_barang, barcode, gambar_barang, stock_brg';
+		$columns = 'tb_grosir_temp.id_brg, id_grosir_temp, nama_barang, barcode, gambar_barang, stock_brg, status';
 		$filter = array('nama_barang');
 		$joins = array(
 			array(
@@ -2068,7 +2113,7 @@ class Product extends CI_Controller
 			),
 		);
 
-		$where = null;
+		$where = "1 AND tb_barang.status = 'aktif'";;
 
 		$list = $this->Datatable_model->get_data('tb_grosir_temp', $columns, $joins, $filter, $this->input->post('search')['value'], $where, $this->input->post('start'), $this->input->post('length'));
 
@@ -2146,6 +2191,7 @@ class Product extends CI_Controller
 			->select('tb_grosir_temp.*, tb_barang.nama_barang, tb_barang.hpp_barang, tb_barang.harga_jual_barang')
 			->from('tb_grosir_temp')
 			->join('tb_barang', 'tb_barang.id_brg = tb_grosir_temp.id_brg', 'left')
+			->where('tb_barang.status', 'aktif')
 			->get()
 			->result_array();
 
@@ -2257,7 +2303,9 @@ class Product extends CI_Controller
 
 	public function promosi()
 	{
-		$data['promosi'] = $this->M_Crud->all_data('tb_barang')->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg', 'left')->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')->where('promo_brg', 'On')->get()->result_array();
+		$data['promosi'] = $this->M_Crud->all_data('tb_barang')->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg', 'left')->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')
+		->where('status', 'aktif')
+		->where('promo_brg', 'On')->get()->result_array();
 		$this->load->view('level/admin/product_promosi', $data);
 	}
 
@@ -2303,7 +2351,7 @@ class Product extends CI_Controller
 
 	public function promosi_temp()
 	{
-		$columns = 'tb_promo_temp.id_brg, id_promo_temp, nama_barang, barcode, gambar_barang, stock_brg';
+		$columns = 'tb_promo_temp.id_brg, id_promo_temp, nama_barang, barcode, gambar_barang, stock_brg, status';
 		$filter = array('nama_barang');
 		$joins = array(
 			array(
@@ -2313,7 +2361,7 @@ class Product extends CI_Controller
 			),
 		);
 
-		$where = null;
+		$where = "1 AND tb_barang.status = 'aktif'";
 
 		$list = $this->Datatable_model->get_data('tb_promo_temp', $columns, $joins, $filter, $this->input->post('search')['value'], $where, $this->input->post('start'), $this->input->post('length'));
 
@@ -2364,6 +2412,7 @@ class Product extends CI_Controller
 			->select('tb_promo_temp.*, tb_barang.nama_barang, tb_barang.hpp_barang, tb_barang.harga_jual_barang')
 			->from('tb_promo_temp')
 			->join('tb_barang', 'tb_barang.id_brg = tb_promo_temp.id_brg', 'left')
+			->where('tb_barang.status', 'aktif')
 			->get()
 			->result_array();
 
@@ -2460,6 +2509,7 @@ class Product extends CI_Controller
 
 		// Filter berdasarkan id_brg
 		$this->db->where('tb_barang.id_brg', $id_brg);
+		$this->db->where('tb_barang.status', 'aktif'); // Hanya ambil barang yang aktif
 
 		$dataBarang = $this->db->get()->row_array();
 

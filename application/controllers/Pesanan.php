@@ -303,14 +303,25 @@ class Pesanan extends CI_Controller
 		if ($id_user_result) {
 			$id_user = $id_user_result['id_user'];
 
-			// Hitung total belanja bulan ini untuk id_user
+			$day = date('d');
+
+			if ((int)$day >= 16) {
+				// Jika hari >= 16, berarti periode adalah 16 bulan ini sampai 15 bulan depan
+				$start_date = date('Y-m-16');
+				$end_date = date('Y-m-15', strtotime('+1 month'));
+			} else {
+				// Jika hari < 16, berarti periode adalah 16 bulan lalu sampai 15 bulan ini
+				$start_date = date('Y-m-16', strtotime('-1 month'));
+				$end_date = date('Y-m-15');
+			}
+
 			$this->db->select_sum('grand_total', 'total_bulan_ini');
 			$this->db->from('tb_pesanan');
-			$this->db->where('id_user', $id_user); // Menggunakan id_user yang ditemukan
-			$this->db->where('MONTH(tgl_pesanan)', date('m')); // Bulan sekarang
-			$this->db->where('YEAR(tgl_pesanan)', date('Y'));  // Tahun sekarang
-			$total_belanja_query = $this->db->get();
-			$total_belanja_result = $total_belanja_query->row_array();
+			$this->db->where('id_user', $id_user);
+			$this->db->where('tgl_pesanan >=', $start_date);
+			$this->db->where('tgl_pesanan <=', $end_date);
+
+			$total_belanja_result = $this->db->get()->row_array();
 
 			return $total_belanja_result['total_bulan_ini'] ?? 0;
 		} else {

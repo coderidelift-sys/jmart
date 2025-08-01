@@ -1762,118 +1762,99 @@ class Laporan extends CI_Controller
     }
 
     public function penjualan_barang_excel()
-    {
-        // Tangkap data yang dikirim melalui AJAX
-        $startDate = $this->input->post('start');
-        $endDate = $this->input->post('end');
-        $barang = $this->input->post('barang');
+	{
+		$startDate = $this->input->post('start');
+		$endDate = $this->input->post('end');
+		$barang = $this->input->post('barang');
 
-        // Buat query berdasarkan filter yang diberikan
-        $this->db->select('*');
-        $this->db->from('tb_pesanan_detail');
-        $this->db->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan');
-        $this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
-        $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
-        $this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
-        // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+		$this->db->select('tb_pesanan_detail.*, tb_pesanan.grand_total, tb_pesanan.ongkos_kirim, tb_pesanan.id_user, tb_pesanan.tgl_pesanan, tb_barang.nama_barang, tb_barang.barcode, tb_barang.hpp_barang');
+		$this->db->from('tb_pesanan_detail');
+		$this->db->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan');
+		$this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
+		$this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
+		$this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
 
-        // Tambahkan filter berdasarkan barang
-        if (!empty($barang)) {
-            $this->db->where('tb_pesanan_detail.id_brg', $barang);
-        }
+		if (!empty($startDate) && !empty($endDate)) {
+			$this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
+		} else if (!empty($startDate)) {
+			$this->db->where("tgl_pesanan >=", $startDate);
+		} else if (!empty($endDate)) {
+			$this->db->where("tgl_pesanan <=", $endDate);
+		}
 
-        // Jalankan query dan simpan hasilnya ke dalam array
-        $pesanan = $this->db->get()->result_array();
+		if (!empty($barang)) {
+			$this->db->where('tb_pesanan_detail.id_brg', $barang);
+		}
 
-        // Inisialisasi variabel total harga semua
-        $total_harga_semua = 0;
+		$pesanan = $this->db->get()->result_array();
 
-        // Inisialisasi objek Spreadsheet
-        $spreadsheet = new PhpOffice\PhpSpreadsheet\Spreadsheet();
+		$total_harga_semua = 0;
 
-        // Set properties dokumen
-        $spreadsheet->getProperties()->setCreator("Your Name")
-            ->setLastModifiedBy("Your Name")
-            ->setTitle("Penjualan by Barang Report")
-            ->setSubject("Penjualan by Barang Report")
-            ->setDescription("Penjualan by Barang Report")
-            ->setKeywords("penjualan by barang report")
-            ->setCategory("Report");
+		$spreadsheet = new PhpOffice\PhpSpreadsheet\Spreadsheet();
 
-        // Mulai menulis data ke dalam file Excel
-        // Set nilai sel-sel pada header
-        $spreadsheet->getActiveSheet()->setCellValue('A1', 'Periode: ' . (!empty($startDate) ? date('d/F/Y', strtotime($startDate)) : '') . ' s/d ' . (!empty($endDate) ? date('d/F/Y', strtotime($endDate)) : ''));
-        $spreadsheet->getActiveSheet()->setCellValue('A2', 'No');
-        $spreadsheet->getActiveSheet()->setCellValue('B2', 'ID Transaksi');
-        $spreadsheet->getActiveSheet()->setCellValue('C2', 'Tanggal');
-        $spreadsheet->getActiveSheet()->setCellValue('D2', 'Nama Barang');
-        $spreadsheet->getActiveSheet()->setCellValue('E2', 'Barcode');
-        $spreadsheet->getActiveSheet()->setCellValue('F2', 'QTY');
-        $spreadsheet->getActiveSheet()->setCellValue('G2', 'HPP');
-        $spreadsheet->getActiveSheet()->setCellValue('H2', 'Harga');
-        $spreadsheet->getActiveSheet()->setCellValue('I2', 'Sub Total');
+		$spreadsheet->getProperties()->setCreator("Your Name")
+			->setLastModifiedBy("Your Name")
+			->setTitle("Penjualan by Barang Report")
+			->setSubject("Penjualan by Barang Report")
+			->setDescription("Penjualan by Barang Report")
+			->setKeywords("penjualan by barang report")
+			->setCategory("Report");
 
-        // Menerapkan border pada header
-        $spreadsheet->getActiveSheet()->getStyle('A2:I2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+		$spreadsheet->getActiveSheet()->setCellValue('A1', 'Periode: ' . (!empty($startDate) ? date('d/F/Y', strtotime($startDate)) : '') . ' s/d ' . (!empty($endDate) ? date('d/F/Y', strtotime($endDate)) : ''));
+		$spreadsheet->getActiveSheet()->setCellValue('A2', 'No');
+		$spreadsheet->getActiveSheet()->setCellValue('B2', 'ID Transaksi');
+		$spreadsheet->getActiveSheet()->setCellValue('C2', 'Tanggal');
+		$spreadsheet->getActiveSheet()->setCellValue('D2', 'Nama Barang');
+		$spreadsheet->getActiveSheet()->setCellValue('E2', 'Barcode');
+		$spreadsheet->getActiveSheet()->setCellValue('F2', 'QTY');
+		$spreadsheet->getActiveSheet()->setCellValue('G2', 'HPP');
+		$spreadsheet->getActiveSheet()->setCellValue('H2', 'Harga');
+		$spreadsheet->getActiveSheet()->setCellValue('I2', 'Sub Total');
 
-        // Menambahkan data dari array $pesanan
-        $row = 3;
-        foreach ($pesanan as $key => $value) {
-            $subTotal = $value['jumlah_jual'] * $value['harga_saat_ini'];
+		$spreadsheet->getActiveSheet()->getStyle('A2:I2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-            $spreadsheet->getActiveSheet()->setCellValue('A' . $row, $key + 1);
-            $spreadsheet->getActiveSheet()->setCellValue('B' . $row, $value['id_pesanan']);
-            $spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y', strtotime($value['tgl_pesanan'])));
-            $spreadsheet->getActiveSheet()->setCellValue('D' . $row, $value['nama_barang']);
-            $spreadsheet->getActiveSheet()->setCellValue('E' . $row, $value['barcode']);
-            $spreadsheet->getActiveSheet()->setCellValue('F' . $row, $value['jumlah_jual']);
-            $spreadsheet->getActiveSheet()->setCellValue('G' . $row, $value['hpp_barang']);
-            $spreadsheet->getActiveSheet()->setCellValue('H' . $row, $value['harga_saat_ini']);
-            $spreadsheet->getActiveSheet()->setCellValue('I' . $row, $subTotal);
+		$row = 3;
+		$total_harga_semua = 0;
+		foreach ($pesanan as $key => $value) {
+			$subTotal = $value['jumlah_jual'] * $value['harga_saat_ini'];
 
-            // Menambahkan border di sekitar sel-sel
-            $styleArray = [
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    ],
-                ],
-            ];
-            $spreadsheet->getActiveSheet()->getStyle('A' . $row . ':I' . $row)->applyFromArray($styleArray);
+			$spreadsheet->getActiveSheet()->setCellValue('A' . $row, $key + 1);
+			$spreadsheet->getActiveSheet()->setCellValue('B' . $row, $value['id_pesanan']);
+			$spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y', strtotime($value['tgl_pesanan'])));
+			$spreadsheet->getActiveSheet()->setCellValue('D' . $row, $value['nama_barang']);
+			$spreadsheet->getActiveSheet()->setCellValue('E' . $row, $value['barcode']);
+			$spreadsheet->getActiveSheet()->setCellValue('F' . $row, $value['jumlah_jual']);
+			$spreadsheet->getActiveSheet()->setCellValue('G' . $row, $value['hpp_barang']);
+			$spreadsheet->getActiveSheet()->setCellValue('H' . $row, $value['harga_saat_ini']);
+			$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $subTotal);
 
-            $total_harga_semua += $subTotal; // Menambahkan nilai sub total ke total harga semua
+			$spreadsheet->getActiveSheet()->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+				'borders' => [
+					'allBorders' => [
+						'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+					],
+				],
+			]);
 
-            $row++;
-        }
+			$total_harga_semua += $subTotal;
+			$row++;
+		}
 
-        // Set lebar kolom
-        $spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(30);
-        $spreadsheet->getActiveSheet()->getColumnDimension('E')->setWidth(15);
-        // Sesuaikan dengan kolom yang lain
+		$spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(30);
+		$spreadsheet->getActiveSheet()->getColumnDimension('E')->setWidth(15);
 
-        // Tambahkan total penjualan ke dalam footer
-        $spreadsheet->getActiveSheet()->setCellValue('H' . $row, 'Total Penjualan');
-        $spreadsheet->getActiveSheet()->setCellValue('I' . $row, $total_harga_semua);
+		$spreadsheet->getActiveSheet()->setCellValue('H' . $row, 'Total Penjualan');
+		$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $total_harga_semua);
 
-        // Set judul dan ekstensi file
-        $filename = 'penjualan_barang_report.xlsx';
+		$filename = 'penjualan_barang_report.xlsx';
 
-        // Set header untuk tipe konten dan nama file
-        header('Content-type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
+		header('Content-type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+		header('Cache-Control: max-age=0');
 
-        // Buat writer untuk XLSX dan simpan output ke standar output
-        $writer = new PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save('php://output');
-    }
+		$writer = new PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+		$writer->save('php://output');
+	}
     // END REPORT 6
 
     // REPORT 7
