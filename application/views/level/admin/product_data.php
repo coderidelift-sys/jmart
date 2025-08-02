@@ -506,11 +506,11 @@
                 type: "POST",
                 dataType: "json",
 				beforeSend: function () {
-    if (typeof showLoading === 'function') showLoading();
-},
-complete: function () {
-    if (typeof hideLoading === 'function') hideLoading();
-},
+					if (typeof showLoading === 'function') showLoading();
+				},
+				complete: function () {
+					if (typeof hideLoading === 'function') hideLoading();
+				},
 
                 success: function(response) {
                     if (response.status === "success") {
@@ -563,11 +563,11 @@ complete: function () {
                 responseType: 'blob' // Menyatakan bahwa respons yang diharapkan adalah dalam bentuk blob
             },
 			beforeSend: function () {
-    if (typeof showLoading === 'function') showLoading();
-},
-complete: function () {
-    if (typeof hideLoading === 'function') hideLoading();
-},
+				if (typeof showLoading === 'function') showLoading();
+			},
+			complete: function () {
+				if (typeof hideLoading === 'function') hideLoading();
+			},
 
             success: function(blob, status, xhr) {
                 // Logika untuk menangani respons dari server
@@ -609,6 +609,45 @@ complete: function () {
             }
         });
     }
+
+	function printLabel(productId) {
+		$.ajax({
+			url: '/product/cetak_label_produk/' + productId,
+			method: 'GET',
+			dataType: 'html',
+			beforeSend: function () {
+				if (typeof showLoading === 'function') showLoading();
+			},
+			success: function (labelHtml) {
+				const popupWin = window.open('', '_blank', 'width=189,height=113');
+
+				popupWin.document.open();
+				popupWin.document.write(`${labelHtml}`);
+				popupWin.document.close();
+
+				popupWin.onload = function () {
+					const svg = popupWin.document.getElementById("barcode-print");
+					if (svg) {
+						const barcodeVal = svg.getAttribute("data-code") || "0000000000000";
+						JsBarcode(svg, barcodeVal, {
+							format: "CODE128",
+							lineColor: "#000",
+							width: 1.5,
+							height: 30,
+							displayValue: false
+						});
+					}
+				};
+				popupWin.print();
+			},
+			error: function () {
+				alert("Gagal memuat label");
+			},
+			complete: function () {
+				if (typeof hideLoading === 'function') hideLoading();
+			},
+		});
+	}
 </script>
 </body>
 

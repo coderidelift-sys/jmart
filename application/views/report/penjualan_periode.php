@@ -162,12 +162,20 @@
                                     </tbody>
                                     <tfoot>
                                         <tr class="bg-gradient-dark">
-                                            <td style="text-align: right !important;" colspan="7" class="fw-bold text-uppercase text-start">Total Biaya Pembelian</td>
+                                            <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Biaya Pembelian</td>
                                             <td colspan="3" style="text-align: left !important;"><span id="biaya_pembelian"></span></td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: right !important;" colspan="7" class="fw-bold text-uppercase text-start">Total Autodebet</td>
+                                            <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Autodebet</td>
                                             <td colspan="3" style="text-align: left !important;"><span id="biaya_belumbayar"></span></td>
+                                        </tr>
+										<tr>
+                                            <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Transfer</td>
+                                            <td colspan="3" style="text-align: left !important;"><span id="biaya_tf"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Cash</td>
+                                            <td colspan="3" style="text-align: left !important;"><span id="biaya_cash"></span></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -217,6 +225,8 @@
                     // Mengisi nilai total harga ke elemen yang sesuai
                     $("#biaya_pembelian").text(json.totalHargaSemua);
                     $("#biaya_belumbayar").text(json.totalHargaSemuaBelumLunas);
+                    $("#biaya_cash").text(json.totalHargaSemuaCash);
+                    $("#biaya_tf").text(json.totalHargaSemuaTransfer);
 
                     // Mengembalikan data untuk DataTable
                     return json.data;

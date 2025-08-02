@@ -88,21 +88,28 @@ class Kasir extends CI_Controller
 
         if ($keyword) {
             $total_records = $this->M_Crud->all_data('tb_barang')
-                ->like('nama_barang', $keyword)
-                ->or_like('barcode', $keyword)
+				->group_start()
+					->like('nama_barang', $keyword)
+					->or_like('barcode', $keyword)
+				->group_end()
+				->where('status =', 'aktif')
                 ->count_all_results();
             $barang = $this->M_Crud->all_data('tb_barang')
                 ->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')
-                ->like('nama_barang', $keyword)
-                ->or_like('barcode', $keyword)
+                ->group_start()
+					->like('nama_barang', $keyword)
+					->or_like('barcode', $keyword)
+				->group_end()
+				->where('status =', 'aktif')
                 ->limit($limit, $limit_start)
                 ->order_by('id_brg', 'ASC')
                 ->get()
                 ->result_array();
         } else {
-            $total_records = $this->M_Crud->all_data('tb_barang')->count_all_results();
+            $total_records = $this->M_Crud->all_data('tb_barang')->where('tb_barang.status =', 'aktif')->count_all_results();
             $barang = $this->M_Crud->all_data('tb_barang')
                 ->join('tb_satuan', 'tb_satuan.id_satuan = tb_barang.id_satuan', 'left')
+				->where('tb_barang.status =', 'aktif')
                 ->limit($limit, $limit_start)
                 ->get()
                 ->result_array();
@@ -423,26 +430,35 @@ class Kasir extends CI_Controller
         $user = $this->session->userdata('id_user');
 
         // 1. Cari exact match dulu
-        $ditemukan = $this->M_Crud->all_data('tb_barang')->where('barcode', $id)->get()->row_array();
+        $ditemukan = $this->M_Crud->all_data('tb_barang')
+		->where('status =', 'aktif')
+		->where('barcode', $id)->get()->row_array();
 
         // 2. Jika tidak ketemu, coba hapus leading zero dan cari lagi
         if (!$ditemukan) {
             $id_nozero = ltrim($id, '0');
-            $ditemukan = $this->M_Crud->all_data('tb_barang')->where('barcode', $id_nozero)->get()->row_array();
+            $ditemukan = $this->M_Crud->all_data('tb_barang')
+			->where('status =', 'aktif')
+			->where('barcode', $id_nozero)->get()->row_array();
         }
 
         // 3. Jika masih tidak ketemu, coba pad leading zero sesuai panjang barcode di database
         if (!$ditemukan) {
             $max_length = $this->db->select('MAX(LENGTH(barcode)) as max_len')->get('tb_barang')->row()->max_len;
             $barcode_padded = str_pad($id_nozero, $max_length, '0', STR_PAD_LEFT);
-            $ditemukan = $this->M_Crud->all_data('tb_barang')->where('barcode', $barcode_padded)->get()->row_array();
+            $ditemukan = $this->M_Crud->all_data('tb_barang')
+			->where('status =', 'aktif')
+			->where('barcode', $barcode_padded)->get()->row_array();
         }
 
         // 4. Jika masih tidak ketemu, baru pakai like
         if (!$ditemukan) {
             $ditemukan = $this->M_Crud->all_data('tb_barang')
+				->group_start()
                 ->like('barcode', $id)
                 ->or_like('nama_barang', $id)
+				->group_end()
+				->where('status =', 'aktif')
                 ->get()->row_array();
         }
 
@@ -470,7 +486,7 @@ class Kasir extends CI_Controller
                 $response = array('status' => 'error', 'message' => 'Stok tidak mencukupi');
             }
         } else {
-            $response = array('status' => 'error', 'message' => 'Barang tidak ditemukan');
+            $response = array('status' => 'error', 'message' => 'Barang tidak ditemukan atau sudah diarsipkan');
         }
 
         $this->output

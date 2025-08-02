@@ -84,6 +84,60 @@
 
 <div class="page-body">
     <div class="container-xl">
+		<!-- Modal Pilih Bulan & Tahun -->
+		<div class="modal fade" id="modalExcelMonthly" tabindex="-1" aria-labelledby="modalExcelMonthlyLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm modal-dialog-centered">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="modalExcelMonthlyLabel">Pilih Bulan & Tahun</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+			</div>
+			<div class="modal-body">
+				<div id="formMonthlyExport">
+					<div class="mb-3">
+						<label for="selectMonth" class="form-label">Bulan</label>
+						<select class="form-select" id="selectMonth" name="month" required>
+						<option value="" disabled selected>Pilih Bulan</option>
+						<?php
+						$months = [
+							'01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+							'05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+							'09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+						];
+						foreach ($months as $key => $value) {
+							if (date('m') == $key) {
+								echo "<option value='$key' selected>$value</option>";
+							} else {
+								echo "<option value='$key'>$value</option>";
+							}
+						}
+						?>
+						</select>
+					</div>
+					<div class="mb-3">
+						<label for="selectYear" class="form-label">Tahun</label>
+						<select class="form-select" id="selectYear" name="year" required>
+						<option value="" disabled selected>Pilih Tahun</option>
+						<?php
+						$currentYear = date('Y');
+						for ($i = $currentYear; $i >= $currentYear - 15; $i--) {
+							if (date('Y') == $i) {
+								echo "<option value='$i' selected>$i</option>";
+							} else {
+								echo "<option value='$i'>$i</option>";
+							}
+						}
+						?>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" id="btn-excel-monthly" class="btn btn-success w-100">Download</button>
+			</div>
+			</div>
+		</div>
+		</div>
         <div class="row">
             <div class="col-sm-8 offset-sm-2">
                 <div class="card">
@@ -115,7 +169,7 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <div class="text-center">
+                            <div class="text-center mb-2">
                                 <button type="button" id="reloadDs" class="btn btn-primary">
                                     Terapkan Filter
                                 </button>
@@ -126,6 +180,12 @@
                                     Download Excel
                                 </button>
                             </div>
+							<div class="text-center">
+								<!-- Tombol untuk membuka modal -->
+								<button type="button" class="btn btn-outline-success ms-2 w-100" data-bs-toggle="modal" data-bs-target="#modalExcelMonthly">
+									Download Excel Monthly
+								</button>
+							</div>
                         </div>
                     </form>
                 </div>
@@ -159,7 +219,7 @@
                                     </tbody>
                                     <tfoot>
                                         <tr class="bg-gradient-dark">
-                                            <td style="text-align: right !important;" colspan="9" class="fw-bold text-uppercase">Total Penjualan</td>
+                                            <td style="text-align: right !important;" colspan="10" class="fw-bold text-uppercase">Total Penjualan</td>
                                             <td><span id='biaya_pembelian'></span></td>
                                         </tr>
                                     </tfoot>
@@ -373,15 +433,77 @@ complete: function () {
                     responseType: 'blob' // Set responseType ke 'blob' untuk menerima binary large objects (blob)
                 },
 				beforeSend: function () {
-    if (typeof showLoading === 'function') showLoading();
-},
-complete: function () {
-    if (typeof hideLoading === 'function') hideLoading();
-},
+					if (typeof showLoading === 'function') showLoading();
+				},
+				complete: function () {
+					if (typeof hideLoading === 'function') hideLoading();
+				},
 
                 success: function(response, status, xhr) {
                     // Sembunyikan elemen loading saat respons diterima
                     $('#loading').hide();
+                    // Cek apakah respons adalah blob
+                    if (response instanceof Blob) {
+                        // Buat URL objek untuk blob
+                        var url = window.URL.createObjectURL(response);
+                        // Buat elemen link untuk mendownload file
+                        var link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'penjualan_barang.xlsx'; // Atur nama file
+                        // Klik pada link untuk memicu unduhan
+                        link.click();
+                        // Hapus URL objek setelah unduhan selesai
+                        window.URL.revokeObjectURL(url);
+                    } else {
+                        // Jika respons bukan blob, tampilkan pesan kesalahan
+                        alert('Terjadi kesalahan saat mengunduh file.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Tampilkan pesan kesalahan jika terjadi kesalahan pada permintaan AJAX
+                    console.error(xhr.responseText);
+                    alert('Terjadi kesalahan saat mengunduh file.');
+                    // Sembunyikan elemen loading jika terjadi kesalahan
+                    $('#loading').hide();
+                }
+            });
+        });
+
+		$('#btn-excel-monthly').click(function() {
+            var startDate = $('#selectMonth').val();
+            var endDate = $('#selectYear').val();
+            var barang = $('#select_barang').val();
+
+            // Tampilkan elemen loading
+            $('#loading').show();
+
+            // Kirim data ke server menggunakan AJAX
+            $.ajax({
+                url: '<?php echo base_url("laporan/penjualan_barang_excel"); ?>',
+                method: 'POST',
+                data: {
+                    start: startDate,
+                    end: endDate,
+                    barang: barang,
+					monthly: true
+                },
+                xhrFields: {
+                    responseType: 'blob' // Set responseType ke 'blob' untuk menerima binary large objects (blob)
+                },
+				beforeSend: function () {
+					if (typeof showLoading === 'function') showLoading();
+				},
+				complete: function () {
+					if (typeof hideLoading === 'function') hideLoading();
+				},
+
+                success: function(response, status, xhr) {
+                    // Sembunyikan elemen loading saat respons diterima
+                    $('#loading').hide();
+
+					// hide modal
+					$('#modalExcelMonthly').modal('hide');
+
                     // Cek apakah respons adalah blob
                     if (response instanceof Blob) {
                         // Buat URL objek untuk blob

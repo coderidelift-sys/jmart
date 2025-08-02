@@ -78,11 +78,14 @@
             <?php
             $total_harga_semua = 0;
             $total_harga_semua_belum_lunas = 0;
+			$total_harga_semua_cash = 0;
+			$total_harga_semua_transfer = 0;
             foreach ($pesanan as $key => $value) : ?>
                 <?php
                 $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
                     ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                     ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
+					->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
                     ->get('tb_pesanan_detail');
                 $total_harga = $query_semua->row()->total_harga ?? 0;
                 $total_harga_semua += $total_harga;
@@ -91,10 +94,17 @@
                     ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                     ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
                     ->where('tb_pesanan.status_pembayaran', 'Menunggu Pembayaran')
+					->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
                     ->get('tb_pesanan_detail');
                 $total_harga2 = $query_semua->row()->total_harga ?? 0;
                 $total_harga_semua_belum_lunas += $total_harga2;
+				if ($value['metode_bayar'] == 'cash') {
+					$total_harga_semua_cash += $total_harga ?? 0;
+				} else if ($value['metode_bayar'] == 'transfer') {
+					$total_harga_semua_transfer += $total_harga ?? 0;
+				}
                 ?>
+
                 <tr>
                     <td class="text-center"><?= $key + 1 ?></td>
                     <td><?= $value['id_pesanan'] ?></td>
@@ -112,13 +122,21 @@
         </tbody>
         <tfoot>
             <tr class="bg-gradient-dark">
-                <td style="text-align: right !important;" colspan="7" class="fw-bold text-uppercase text-start">Total Biaya Pembelian</td>
+                <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Biaya Pembelian</td>
                 <td colspan="4" style="text-align: left !important;"><span id="biaya_pembelian"><?= "Rp. " . number_format($total_harga_semua); ?></span></td>
             </tr>
             <tr>
-                <td style="text-align: right !important;" colspan="7" class="fw-bold text-uppercase text-start">Total Autodebet</td>
+                <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Autodebet</td>
                 <td colspan="4" style="text-align: left !important;"><span id="biaya_belumbayar"><?= "Rp. " .  number_format($total_harga_semua_belum_lunas); ?></span></td>
             </tr>
+			<tr>
+				<td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Transfer</td>
+				<td colspan="4" style="text-align: left !important;"><span id="biaya_tf"><?= "Rp. " .  number_format($total_harga_semua_transfer); ?></span></td>
+			</tr>
+			<tr>
+				<td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Cash</td>
+				<td colspan="4" style="text-align: left !important;"><span id="biaya_cash"><?= "Rp. " .  number_format($total_harga_semua_cash); ?></span></td>
+			</tr>
         </tfoot>
     </table>
 </body>

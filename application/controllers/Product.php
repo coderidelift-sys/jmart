@@ -1374,7 +1374,7 @@ class Product extends CI_Controller
                         <li><a class="dropdown-item" href="' . base_url('product/edit/' . $barang->id_brg) . '" data-id="' . $barang->id_brg . '">&nbsp;Edit Produk</a></li>
                         <li><a class="dropdown-item" href="' . base_url('product/manajemen_stock/' . $barang->id_brg) . '">&nbsp;Stock Terintegrasi</a></li>
 						<li><a class="dropdown-item text-danger" data-id="' . $barang->id_brg . '" href="javascript:void(0);" onclick="deleteProduk(this);">&nbsp;Hapus Produk</a></li>
-						<li><a class="dropdown-item" href="' . base_url('product/cetak_label_produk/' . $barang->id_brg) . '" target="_blank">&nbsp;Cetak Label Produk</a></li>
+						<li><a class="dropdown-item" href="javascript:void(0);" onclick="printLabel(' . $barang->id_brg . ');">&nbsp;Cetak Label Produk</a></li>
 					</ul>
 				</div>
                 '
@@ -1393,7 +1393,6 @@ class Product extends CI_Controller
 
 	public function cetak_label_produk($id)
 	{
-		$this->load->library('pdf');
 		$this->load->library('session');
 		$this->load->model('M_Crud');
 		$this->load->helper('custom');
@@ -1404,17 +1403,17 @@ class Product extends CI_Controller
 			show_404();
 		}
 
-		$data['product'] = [
-			'nama_barang' => $product['nama_barang'],
-			'harga_jual_barang' => $product['harga_jual_barang'],
-			'harga_grosir' => $product['harga_grosir'] ?? null,
-			'barcode' => $product['barcode'] ?? '0000000000000', // ganti dengan kolom barcode di DB
-			'ukuran' => $product['ukuran'] ?? '', // misalnya '240 ML'
+		$data['products'] = [
+			[
+				'nama_barang' => $product['nama_barang'],
+				'harga_jual_barang' => $product['harga_jual_barang'],
+				'harga_grosir' => $product['harga_grosir'] ?? null,
+				'barcode' => $product['barcode'] ?? '0000000000000', // ganti dengan kolom barcode di DB
+				'ukuran' => $product['ukuran'] ?? '', // misalnya '240 ML'
+			],
 		];
 
-		$this->pdf->load_view('level/admin/product_label_pdf', $data);
-		$this->pdf->filename = 'label_rak_' . $product['nama_barang'] . '.pdf';
-		$this->pdf->stream($this->pdf->filename, array("Attachment" => false));
+		echo $this->load->view('level/admin/product_label_pdf', $data, true);
 	}
 
 	public function detail($id)

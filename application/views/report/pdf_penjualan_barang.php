@@ -78,20 +78,10 @@
             $total_harga_semua_belum_lunas = 0;
             foreach ($pesanan as $key => $value) : ?>
                 <?php
-                $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
-                    ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
-                    ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
-                    ->get('tb_pesanan_detail');
-                $total_harga = $query_semua->row()->total_harga ?? 0;
-                $total_harga_semua += $total_harga;
-
-                $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
-                    ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
-                    ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
-                    ->where('tb_pesanan.status_pembayaran', 'Menunggu Pembayaran')
-                    ->get('tb_pesanan_detail');
-                $total_harga2 = $query_semua->row()->total_harga ?? 0;
-                $total_harga_semua_belum_lunas += $total_harga2;
+				$total_harga_semua += $value['jumlah_jual'] * $value['harga_saat_ini'];
+				if ($value['status_pembayaran'] == 'Menunggu Pembayaran') {
+					$total_harga_semua_belum_lunas += $value['jumlah_jual'] * $value['harga_saat_ini'];
+				}
                 ?>
                 <tr>
                     <td><?= $key + 1 ?></td>
@@ -113,7 +103,7 @@
             </tr>
             <tr>
                 <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Autodebet</td>
-                <td colspan="1" style="text-align: left !important;"><span id="biaya_belumbayar"><?= "Rp. " . number_format($total_harga_semua); ?></span></td>
+                <td colspan="1" style="text-align: left !important;"><span id="biaya_belumbayar"><?= "Rp. " . number_format($total_harga_semua_belum_lunas); ?></span></td>
             </tr>
         </tfoot>
     </table>

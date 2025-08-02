@@ -80,6 +80,8 @@
                 $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
                     ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                     ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
+					->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
+					->where('tb_pesanan_detail.id_brg', $value['id_brg'])
                     ->get('tb_pesanan_detail');
                 $total_harga = $query_semua->row()->total_harga ?? 0;
                 $total_harga_semua += $total_harga;
@@ -88,6 +90,8 @@
                     ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                     ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
                     ->where('tb_pesanan.status_pembayaran', 'Menunggu Pembayaran')
+					->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
+					->where('tb_pesanan_detail.id_brg', $value['id_brg'])
                     ->get('tb_pesanan_detail');
                 $total_harga2 = $query_semua->row()->total_harga ?? 0;
                 $total_harga_semua_belum_lunas += $total_harga2;

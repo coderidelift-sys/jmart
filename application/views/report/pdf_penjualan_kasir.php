@@ -79,11 +79,13 @@
             $total_harga_semua = 0;
             foreach ($pesanan as $key => $value) : ?>
                 <?php
-                $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
-                    ->where('id_brg', $value['id_brg'])
-                    ->get('tb_pesanan_detail');
-                $total_harga = $query_semua->row()->total_harga ?? 0;
-                $total_harga_semua += $total_harga;
+                // $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
+                //     ->where('id_brg', $value['id_brg'])
+                //     ->get('tb_pesanan_detail');
+                // $total_harga = $query_semua->row()->total_harga ?? 0;
+                // $total_harga_semua += $total_harga;
+				$subtotal = $value['harga_saat_ini'] * $value['jumlah_jual'];
+				$total_harga_semua += $subtotal;
                 ?>
                 <tr>
                     <td class="text-center"><?= $key + 1 ?></td>
@@ -102,8 +104,8 @@
         </tbody>
         <tfoot>
             <tr>
-                <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Biaya Penjualan</td>
-                <td colspan="2" style="text-align: left !important;"><span id="biaya_pembelian"><?= "Rp. " . number_format($total_harga_semua); ?></span></td>
+                <td style="text-align: right !important;" colspan="9" class="fw-bold text-uppercase text-start">Total Biaya Penjualan</td>
+                <td colspan="3" style="text-align: left !important;"><span id="biaya_pembelian"><?= "Rp. " . number_format($total_harga_semua); ?></span></td>
             </tr>
         </tfoot>
     </table>

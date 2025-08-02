@@ -271,6 +271,7 @@ class Anggota extends CI_Controller
             $query = $this->db
                 ->select_sum('grand_total')
                 ->where('id_user', $anggota->id_user)
+				->where('status_pesanan !=', 'Dibatalkan')
                 ->get('tb_pesanan');
 
             $total_grand_total = ($query->num_rows() > 0) ? $query->row()->grand_total : 0;
@@ -280,6 +281,7 @@ class Anggota extends CI_Controller
                 ->where('id_user', $anggota->id_user)
                 ->where('metode_bayar', 'autodebet')
                 ->where('status_pembayaran', 'Menunggu Pembayaran')
+				->where('status_pesanan !=', 'Dibatalkan')
                 ->get('tb_pesanan');
 
             $total_grand_total2 = ($query2->num_rows() > 0) ? $query2->row()->grand_total : 0;
@@ -291,6 +293,7 @@ class Anggota extends CI_Controller
                 ->where('id_user', $anggota->id_user)
                 ->where('metode_bayar', 'autodebet')
                 ->where('status_pembayaran', 'Menunggu Pembayaran')
+				->where('status_pesanan !=', 'Dibatalkan')
                 ->where('tgl_pesanan >=', date('Y-m-d', strtotime(str_replace('/', '-', $tanggal[0])))) // Tanggal awal
                 ->where('tgl_pesanan <=', date('Y-m-d', strtotime(str_replace('/', '-', $tanggal[1])))) // Tanggal akhir
                 ->get('tb_pesanan');

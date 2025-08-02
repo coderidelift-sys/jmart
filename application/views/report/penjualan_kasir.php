@@ -173,8 +173,8 @@
                                     </tbody>
                                     <tfoot>
                                         <tr class="bg-gradient-dark">
-                                            <td style="text-align: right !important;" colspan="8" class="fw-bold text-uppercase text-start">Total Biaya Penjualan</td>
-                                            <td colspan="1" style="text-align: left !important;"><span id="biaya_pembelian"></span></td>
+                                            <td style="text-align: right !important;" colspan="9" class="fw-bold text-uppercase text-start">Total Biaya Penjualan</td>
+                                            <td colspan="2" style="text-align: left !important;"><span id="biaya_pembelian"></span></td>
                                         </tr>
                                     </tfoot>
                                 </table>

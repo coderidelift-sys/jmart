@@ -2,103 +2,137 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Label Rak</title>
+	<meta charset="UTF-8">
+	<title>Cetak Label <?= htmlspecialchars($products[0]['nama_barang']) ?></title>
+	<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 	<style>
-		@page {
-			/* size: 5cm 3cm; */
-			/* optional but reinforces size in HTML */
-			margin: 0;
-		}
-
 		body {
-			margin: 0;
-			padding: 0;
 			font-family: Arial, sans-serif;
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: flex-start;
+			gap: 1mm;
+			padding: 5mm;
+			margin: 0;
 		}
 
 		.label {
-			width: 5cm;
-			height: 3cm;
+			width: 50mm;
+			height: 32mm;
+			border: 1px dashed black;
+			padding: 3mm;
 			box-sizing: border-box;
-			padding: 4mm;
-			background-color: #d7e76b;
-			border: 1px solid #000;
 			display: flex;
 			flex-direction: column;
 			justify-content: space-between;
-		}
-
-		.row {
-			display: flex;
-			flex-wrap: nowrap;
 			align-items: center;
-			width: 100%;
+			page-break-inside: avoid;
 		}
 
-		.row.top {
-			font-size: 7pt;
+		.label-title {
 			font-weight: bold;
-			margin-bottom: 1mm;
-		}
-
-		.row.top .code {
-			margin-right: 4px;
-			white-space: nowrap;
-		}
-
-		.row.top .name {
-			flex: 1;
-			white-space: nowrap;
+			font-size: 14px;
+			line-height: 1.2;
+			overflow-wrap: break-word;
+			word-break: break-word;
+			max-height: 25px;
 			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
-		.row.bottom {
-			border-top: 1px solid #000;
-			padding-top: 2mm;
-			height: 1.3cm;
-			display: flex;
-			align-items: center;
-		}
-
-		.col {
-			box-sizing: border-box;
-			height: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-
-		.barcode-col {
-			width: 60%;
-			border-right: 1px solid #000;
-			font-size: 7pt;
-			font-family: 'Courier New', monospace;
-		}
-
-		.price-col {
-			width: 40%;
-			font-weight: bold;
-			font-size: 9pt;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
 			text-align: center;
-			line-height: 1;
+		}
+
+		.price-table {
+			width: 100%;
+			display: flex;
+			justify-content: space-between;
+			font-size: 11px;
+			border-top: 1px solid black;
+			border-bottom: 1px solid black;
+			margin: 3px 0;
+		}
+
+		.price-cell {
+			width: 50%;
+			text-align: center;
+		}
+
+		.price-cell h4 {
+			margin: 0;
+			font-size: 10px;
+		}
+
+		.price-cell .price {
+			font-weight: bold;
+			font-size: 12px;
+		}
+
+		.barcode svg {
+			width: 100%;
+			height: 30px;
+		}
+
+		@media print {
+			@page {
+				size: 70mm 70mm;
+				margin: 0;
+			}
+			body {
+				padding: 5mm;
+				gap: 5mm;
+			}
 		}
 	</style>
 </head>
 
 <body>
-	<div class="label">
-		<div class="row top">
-			<div class="code">[8801097130111]</div>
-			<div class="name">OLATE STRW CAN 240 ML</div>
+	<?php foreach ($products as $index => $item): ?>
+		<div class="label">
+			<div class="label-title" id="name-<?= $index ?>" data-index="<?= $index ?>">
+				<?= htmlspecialchars($item['nama_barang']) ?>
+			</div>
+			<div class="price-table">
+				<div class="price-cell">
+					<h4>Pcs</h4>
+					<div class="price">Rp. <?= number_format($item['harga_jual_barang'], 0, ',', '.') ?></div>
+				</div>
+				<div class="price-cell">
+					<h4>Grosir</h4>
+					<div class="price">Rp. <?= number_format($item['harga_grosir'], 0, ',', '.') ?></div>
+				</div>
+			</div>
+			<div class="barcode">
+				<svg id="barcode-<?= $index ?>" data-code="<?= $item['barcode'] ?>"></svg>
+			</div>
 		</div>
-		<div class="row bottom">
-			<div class="col barcode-col">8801097130111</div>
-			<div class="col price-col">Rp 10.000</div>
-		</div>
-	</div>
+	<?php endforeach; ?>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			document.querySelectorAll('svg[id^="barcode-"]').forEach(svg => {
+				const code = svg.dataset.code;
+				JsBarcode(svg, code, {
+					format: "CODE128",
+					lineColor: "#000",
+					width: 1.5,
+					height: 30,
+					displayValue: false
+				});
+			});
+
+			document.querySelectorAll('.label-title').forEach(el => {
+				let maxHeight = el.offsetHeight;
+				let fontSize = parseInt(window.getComputedStyle(el).fontSize);
+				while (el.scrollHeight > maxHeight && fontSize > 9) {
+					fontSize -= 1;
+					el.style.fontSize = fontSize + "px";
+				}
+			});
+		});
+	</script>
+
 </body>
 
 </html>

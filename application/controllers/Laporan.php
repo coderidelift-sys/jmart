@@ -52,7 +52,7 @@ class Laporan extends CI_Controller
         $check = false;
 
         // Query untuk mengambil data inventori
-        $this->db->select("b.id_brg, b.nama_barang, b.barcode");
+        $this->db->select("b.id_brg, b.nama_barang, b.barcode, b.status");
 
         // Hanya pilih kolom jika mereka ada
         if ($stockAwalExists) {
@@ -111,6 +111,9 @@ class Laporan extends CI_Controller
 
                 // Hitung total_stok_setelah_pembelian
                 $item->total_stok_setelah_pembelian = ($item->$stockAwalField !== '-' ? (int)$item->$stockAwalField : 0) + $item->pembelian_bulan_ini;
+
+				// status barang
+				$item->status_barang = $item->status;
             }
             $data = [
                 'inventori' => $inventori,
@@ -147,8 +150,8 @@ class Laporan extends CI_Controller
         $sheet->setCellValue('B1', $data['bulan'] . '-' . $data['tahun']);
 
         // Menambahkan header kolom sesuai urutan yang diminta
-        $headers = ['No', 'Nama Barang', 'Barcode', 'Stock Awal', 'Pembelian Bulan Ini', 'Total Stock Setelah Pembelian', 'Penjualan Bulan Ini', 'Total Spoil', 'Stock Akhir'];
-        $columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+        $headers = ['No', 'Nama Barang', 'Barcode', 'Stock Awal', 'Pembelian Bulan Ini', 'Total Stock Setelah Pembelian', 'Penjualan Bulan Ini', 'Total Spoil', 'Stock Akhir', 'Status'];
+        $columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
         foreach ($headers as $index => $header) {
             $sheet->setCellValue("{$columns[$index]}3", $header);
@@ -204,6 +207,7 @@ class Laporan extends CI_Controller
                 $sheet->setCellValue("G{$row}", $item->penjualan_bulan_ini);
                 $sheet->setCellValue("H{$row}", $totalSpoil);
 
+
                 // Menghitung stock akhir jika belum ada atau -
                 if ($item->{$data['stockAkhirField']} === '-' || $item->{$data['stockAkhirField']} === null) {
                     $stockAkhir = $item->total_stok_setelah_pembelian - $item->penjualan_bulan_ini - $totalSpoil;
@@ -211,6 +215,8 @@ class Laporan extends CI_Controller
                 } else {
                     $sheet->setCellValue("I{$row}", $item->{$data['stockAkhirField']});
                 }
+
+				$sheet->setCellValue("J{$row}", $item->status_barang);
 
                 $row++;
                 $no++;
@@ -766,7 +772,7 @@ class Laporan extends CI_Controller
         $spreadsheet->getActiveSheet()->setCellValue('B3', 'ID Transaksi');
         $spreadsheet->getActiveSheet()->setCellValue('C3', 'Tanggal Terima');
         $spreadsheet->getActiveSheet()->setCellValue('D3', 'Nama Barang');
-        $spreadsheet->getActiveSheet()->setCellValue('E3', 'Barcode');
+        $spreadsheet->getActiveSheet()->setCellValueExplicit('E3', 'Barcode', DataType::TYPE_STRING);
         $spreadsheet->getActiveSheet()->setCellValue('F3', 'QTY');
         $spreadsheet->getActiveSheet()->setCellValue('G3', 'Harga');
         $spreadsheet->getActiveSheet()->setCellValue('H3', 'Sub Total');
@@ -781,7 +787,7 @@ class Laporan extends CI_Controller
             $spreadsheet->getActiveSheet()->setCellValue('B' . $row, $barang['id_pemesanan']);
             $spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y', strtotime($barang['tgl_diterima'])));
             $spreadsheet->getActiveSheet()->setCellValue('D' . $row, $barang['nama_barang']);
-            $spreadsheet->getActiveSheet()->setCellValue('E' . $row, $barang['barcode']);
+            $spreadsheet->getActiveSheet()->setCellValueExplicit('E' . $row, $barang['barcode'], DataType::TYPE_STRING);
             $spreadsheet->getActiveSheet()->setCellValue('F' . $row, $barang['jumlah_pesan']);
             $spreadsheet->getActiveSheet()->setCellValue('G' . $row, $barang['harga_pesan']);
             $spreadsheet->getActiveSheet()->setCellValue('H' . $row, $barang['jumlah_pesan'] * $barang['harga_pesan']);
@@ -1050,7 +1056,7 @@ class Laporan extends CI_Controller
             $spreadsheet->getActiveSheet()->setCellValue('B' . $row, $barang['id_pemesanan']);
             $spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y', strtotime($barang['tgl_diterima'])));
             $spreadsheet->getActiveSheet()->setCellValue('D' . $row, $barang['nama_barang']);
-            $spreadsheet->getActiveSheet()->setCellValue('E' . $row, $barang['barcode']);
+            $spreadsheet->getActiveSheet()->setCellValueExplicit('E' . $row, $barang['barcode'], DataType::TYPE_STRING);
             $spreadsheet->getActiveSheet()->setCellValue('F' . $row, $barang['jumlah_pesan']);
             $spreadsheet->getActiveSheet()->setCellValue('G' . $row, $barang['harga_pesan']);
             $spreadsheet->getActiveSheet()->setCellValue('H' . $row, $subTotal);
@@ -1141,12 +1147,15 @@ class Laporan extends CI_Controller
         $data = array();
         $total_harga_semua = 0;
         $total_harga_semua_belum_lunas = 0;
+		$total_harga_semua_cash = 0;
+		$total_harga_semua_transfer = 0;
         $no = $_POST['start'];
         foreach ($list->result() as $pesanan) {
             // Menghitung total harga untuk semua status pembayaran
             $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
                 ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                 ->where('tb_pesanan.id_pesanan', $pesanan->id_pesanan)
+				->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
                 ->get('tb_pesanan_detail');
             $total_harga = $query_semua->row()->total_harga ?? 0;
             $total_harga_semua += $total_harga;
@@ -1155,9 +1164,16 @@ class Laporan extends CI_Controller
                 ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                 ->where('tb_pesanan.id_pesanan', $pesanan->id_pesanan)
                 ->where('tb_pesanan.status_pembayaran', 'Menunggu Pembayaran')
+				->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
                 ->get('tb_pesanan_detail');
             $total_harga2 = $query_semua->row()->total_harga ?? 0;
             $total_harga_semua_belum_lunas += $total_harga2;
+
+			if ($pesanan->metode_bayar == 'cash') {
+				$total_harga_semua_cash += $total_harga ?? 0;
+			} else if ($pesanan->metode_bayar == 'transfer') {
+				$total_harga_semua_transfer += $total_harga ?? 0;
+			}
 
             $no++;
             $row = array(
@@ -1179,6 +1195,8 @@ class Laporan extends CI_Controller
         $output = array(
             "totalHargaSemua" => "Rp. " . number_format($total_harga_semua),
             "totalHargaSemuaBelumLunas" => "Rp. " .  number_format($total_harga_semua_belum_lunas),
+			"totalHargaSemuaCash" => "Rp. " .  number_format($total_harga_semua_cash),
+			"totalHargaSemuaTransfer" => "Rp. " .  number_format($total_harga_semua_transfer),
             "draw" => $_POST['draw'],
             "recordsTotal" => $this->Datatable_model->count_all('tb_pesanan'),
             "recordsFiltered" => $this->Datatable_model->count_filtered('tb_pesanan', $columns, $joins, $filter, $this->input->post('search')['value'], $where), // Menggunakan filter
@@ -1208,13 +1226,17 @@ class Laporan extends CI_Controller
         $this->db->from('tb_pesanan');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+        if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}		
 
         // Tambahkan filter berdasarkan supplier
         if (!empty($tatus)) {
@@ -1246,13 +1268,17 @@ class Laporan extends CI_Controller
         $this->db->from('tb_pesanan');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         // Tambahkan filter berdasarkan tanggal pesanan
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+        if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}			
 
         // Tambahkan filter berdasarkan status pesanan
         if (!empty($status)) {
@@ -1288,7 +1314,17 @@ class Laporan extends CI_Controller
 
         // Menambahkan data dari array $pesanan
         $row = 3;
+		$total_autodebet = 0;
+		$total_cash = 0;
+		$total_transfer = 0;
         foreach ($pesanan as $key => $item) {
+			if ($item['metode_bayar'] == 'cash') {
+				$total_cash += $item['grand_total'];
+			} else if ($item['metode_bayar'] == 'transfer') {
+				$total_transfer += $item['grand_total'];
+			} else if ($item['metode_bayar'] == 'autodebet') {
+				$total_autodebet += $item['grand_total'];
+			}
             $spreadsheet->getActiveSheet()->setCellValue('A' . $row, $key + 1);
             $spreadsheet->getActiveSheet()->setCellValue('B' . $row, $item['id_pesanan']);
             $spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y H:i:s', strtotime($item['tgl_pesanan'])));
@@ -1316,6 +1352,30 @@ class Laporan extends CI_Controller
 
         // Tambahkan border pada sel total biaya pembelian
         $spreadsheet->getActiveSheet()->getStyle('H' . $row . ':I' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+		// new row
+		$row++;
+
+		// hitung total autodebet
+		$spreadsheet->getActiveSheet()->setCellValue('H' . $row, 'Total Autodebet');
+		$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $total_autodebet);
+		$spreadsheet->getActiveSheet()->getStyle('H' . $row . ':I' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+		// new row
+		$row++;
+
+		// hitung total transfer
+		$spreadsheet->getActiveSheet()->setCellValue('H' . $row, 'Total Transfer');
+		$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $total_transfer);
+		$spreadsheet->getActiveSheet()->getStyle('H' . $row . ':I' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+		// new row
+		$row++;
+
+		// hitung total cash
+		$spreadsheet->getActiveSheet()->setCellValue('H' . $row, 'Total Cash');
+		$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $total_cash);
+		$spreadsheet->getActiveSheet()->getStyle('H' . $row . ':I' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
         // Set judul dan ekstensi file
         $filename = 'penjualan_periode_report.xlsx';
@@ -1360,19 +1420,20 @@ class Laporan extends CI_Controller
             ),
         );
 
-        $where = null;
+        $where = "tb_pesanan.status_pesanan != 'Dibatalkan'";
         if ($start || $end || $pelanggan) {
-            $where = "1"; // Menginisialisasi dengan 1 sehingga operasi AND berfungsi
 
             if ($start) {
-                // Menggunakan fungsi DATE() untuk memfilter hanya tanggal dan mengabaikan waktu
-                $where .= " AND DATE(tgl_pesanan) >= '" . $start . "'";
-            }
-
-            if ($end) {
-                // Menggunakan fungsi DATE() untuk memfilter hanya tanggal dan mengabaikan waktu
-                $where .= " AND DATE(tgl_pesanan) <= '" . $end . "'";
-            }
+				// Tambahkan jam:menit:detik awal
+				$startTime = $start . ' 00:00:01';
+				$where .= " AND tgl_pesanan >= '" . addslashes($startTime) . "'";
+			}
+		
+			if ($end) {
+				// Tambahkan jam:menit:detik akhir
+				$endTime = $end . ' 23:59:59';
+				$where .= " AND tgl_pesanan <= '" . addslashes($endTime) . "'";
+			}
 
             if ($pelanggan) {
                 $where .= " AND tb_pesanan.id_user = '" . $pelanggan . "'";
@@ -1389,6 +1450,8 @@ class Laporan extends CI_Controller
             $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
                 ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                 ->where('tb_pesanan.id_pesanan', $pesanan->id_pesanan)
+				->where('tb_pesanan_detail.id_brg', $pesanan->id_brg)
+				->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
                 ->get('tb_pesanan_detail');
             $total_harga = $query_semua->row()->total_harga ?? 0;
             $total_harga_semua += $total_harga;
@@ -1396,7 +1459,9 @@ class Laporan extends CI_Controller
             $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
                 ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                 ->where('tb_pesanan.id_pesanan', $pesanan->id_pesanan)
+				->where('tb_pesanan_detail.id_brg', $pesanan->id_brg)
                 ->where('tb_pesanan.status_pembayaran', 'Menunggu Pembayaran')
+				->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
                 ->get('tb_pesanan_detail');
             $total_harga2 = $query_semua->row()->total_harga ?? 0;
             $total_harga_semua_belum_lunas += $total_harga2;
@@ -1449,14 +1514,19 @@ class Laporan extends CI_Controller
         $this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         $this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
         // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+        if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}
 
         // Tambahkan filter berdasarkan supplier
         if (!empty($pelanggan)) {
@@ -1493,14 +1563,19 @@ class Laporan extends CI_Controller
         $this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         $this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
         // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+		if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}
 
         // Tambahkan filter berdasarkan pelanggan
         if (!empty($pelanggan)) {
@@ -1552,7 +1627,7 @@ class Laporan extends CI_Controller
             $spreadsheet->getActiveSheet()->setCellValue('B' . $row, $value['id_pesanan']);
             $spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y', strtotime($value['tgl_pesanan'])));
             $spreadsheet->getActiveSheet()->setCellValue('D' . $row, $value['nama_barang']);
-            $spreadsheet->getActiveSheet()->setCellValue('E' . $row, $value['barcode']);
+            $spreadsheet->getActiveSheet()->setCellValueExplicit('E' . $row, $value['barcode'], DataType::TYPE_STRING);
             $spreadsheet->getActiveSheet()->setCellValue('F' . $row, $value['jumlah_jual']);
             $spreadsheet->getActiveSheet()->setCellValue('G' . $row, $value['harga_saat_ini']);
             $spreadsheet->getActiveSheet()->setCellValue('H' . $row, $subTotal);
@@ -1577,6 +1652,8 @@ class Laporan extends CI_Controller
                 ->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan')
                 ->where('tb_pesanan.id_pesanan', $value['id_pesanan'])
                 ->where('tb_pesanan.status_pembayaran', 'Menunggu Pembayaran')
+				->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
+				->where('tb_pesanan_detail.id_brg', $value['id_brg'])
                 ->get('tb_pesanan_detail');
             $total_harga2 = $query_semua->row()->total_harga ?? 0;
             $totalAutodebit += $total_harga2;
@@ -1637,7 +1714,7 @@ class Laporan extends CI_Controller
         $joins = array(
             array(
                 'table' => 'tb_pesanan',
-                'condition' => 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan',
+                'condition' => 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan AND tb_pesanan.status_pesanan != "Dibatalkan"',
                 'type' => 'inner'
             ),
             array(
@@ -1652,24 +1729,25 @@ class Laporan extends CI_Controller
             ),
         );
 
-        $where = null;
-        if ($start || $end || $barang) {
-            $where = "1"; // Menginisialisasi dengan 1 sehingga operasi AND berfungsi
+        $where = "tb_pesanan.status_pesanan != 'Dibatalkan'";
 
-            if ($start) {
-                // Menggunakan fungsi DATE() untuk memfilter hanya tanggal dan mengabaikan waktu
-                $where .= " AND DATE(tgl_pesanan) >= '" . $start . "'";
-            }
+		if ($start || $end || $barang) {
+			if ($start) {
+				// Tambahkan jam:menit:detik awal
+				$startTime = $start . ' 00:00:01';
+				$where .= " AND tgl_pesanan >= '" . addslashes($startTime) . "'";
+			}
 
-            if ($end) {
-                // Menggunakan fungsi DATE() untuk memfilter hanya tanggal dan mengabaikan waktu
-                $where .= " AND DATE(tgl_pesanan) <= '" . $end . "'";
-            }
+			if ($end) {
+				// Tambahkan jam:menit:detik akhir
+				$endTime = $end . ' 23:59:59';
+				$where .= " AND tgl_pesanan <= '" . addslashes($endTime) . "'";
+			}
 
-            if ($barang) {
-                $where .= " AND tb_pesanan_detail.id_brg = '" . $barang . "'";
-            }
-        }
+			if ($barang) {
+				$where .= " AND tb_pesanan_detail.id_brg = '" . addslashes($barang) . "'";
+			}
+		}
 
         $list = $this->Datatable_model->get_data('tb_pesanan_detail', $columns, $joins, $filter, $this->input->post('search')['value'], $where, $this->input->post('start'), $this->input->post('length'));
 
@@ -1678,9 +1756,14 @@ class Laporan extends CI_Controller
         $total_harga_semua_belum_lunas = 0;
         $no = $_POST['start'];
         foreach ($list->result() as $barang) {
-            $query_semua = $this->db->select('SUM(harga_saat_ini * jumlah_jual) as total_harga')
-                ->where('id_brg', $barang->id_brg)
-                ->get('tb_pesanan_detail');
+            $query_semua = $this->db
+				->select('SUM(harga_saat_ini * jumlah_jual) AS total_harga')
+				->from('tb_pesanan_detail')
+				->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan', 'inner')
+				->where('tb_pesanan_detail.id_brg', $barang->id_brg)
+				->where('tb_pesanan.id_pesanan', $barang->id_pesanan)
+				->where('tb_pesanan.status_pesanan !=', 'Dibatalkan')
+				->get();
             $total_harga = $query_semua->row()->total_harga ?? 0;
             $total_harga_semua += $total_harga;
 
@@ -1734,14 +1817,19 @@ class Laporan extends CI_Controller
         $this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         $this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
         // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+        if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}
 
         // Tambahkan filter berdasarkan supplier
         if (!empty($barang)) {
@@ -1766,69 +1854,73 @@ class Laporan extends CI_Controller
 		$startDate = $this->input->post('start');
 		$endDate = $this->input->post('end');
 		$barang = $this->input->post('barang');
+		$monthly = $this->input->post('monthly') ?? false;
 
-		$this->db->select('tb_pesanan_detail.*, tb_pesanan.grand_total, tb_pesanan.ongkos_kirim, tb_pesanan.id_user, tb_pesanan.tgl_pesanan, tb_barang.nama_barang, tb_barang.barcode, tb_barang.hpp_barang');
+		$this->db->select('
+			tb_pesanan_detail.id_brg,
+			tb_barang.nama_barang,
+			tb_barang.barcode,
+			tb_barang.hpp_barang,
+			SUM(tb_pesanan_detail.jumlah_jual) as total_qty,
+			SUM(tb_pesanan_detail.harga_saat_ini * tb_pesanan_detail.jumlah_jual) as total_sub
+		');
 		$this->db->from('tb_pesanan_detail');
 		$this->db->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan');
-		$this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
-		$this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
 		$this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
 
-		if (!empty($startDate) && !empty($endDate)) {
-			$this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-		} else if (!empty($startDate)) {
-			$this->db->where("tgl_pesanan >=", $startDate);
-		} else if (!empty($endDate)) {
-			$this->db->where("tgl_pesanan <=", $endDate);
+		if ($monthly) {
+			$this->db->where('MONTH(tgl_pesanan)', $startDate);
+			$this->db->where('YEAR(tgl_pesanan)', $endDate);
+		} else {
+			if ($startDate) {
+				$this->db->where('tgl_pesanan >=', date('Y-m-d 00:00:01', strtotime($startDate)));
+			}
+			if ($endDate) {
+				$this->db->where('tgl_pesanan <=', date('Y-m-d 23:59:59', strtotime($endDate)));
+			}
 		}
 
 		if (!empty($barang)) {
 			$this->db->where('tb_pesanan_detail.id_brg', $barang);
 		}
 
-		$pesanan = $this->db->get()->result_array();
+		$this->db->group_by('tb_pesanan_detail.id_brg');
 
-		$total_harga_semua = 0;
+		$result = $this->db->get()->result_array();
 
-		$spreadsheet = new PhpOffice\PhpSpreadsheet\Spreadsheet();
+		$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
 
-		$spreadsheet->getProperties()->setCreator("Your Name")
-			->setLastModifiedBy("Your Name")
-			->setTitle("Penjualan by Barang Report")
-			->setSubject("Penjualan by Barang Report")
-			->setDescription("Penjualan by Barang Report")
-			->setKeywords("penjualan by barang report")
-			->setCategory("Report");
+		$periodeLabel = $monthly
+			? 'Periode: ' . date('F Y', strtotime("{$endDate}-{$startDate}-01"))
+			: 'Periode: ' . (!empty($startDate) ? date('d/M/Y', strtotime($startDate)) : '') . ' s/d ' . (!empty($endDate) ? date('d/M/Y', strtotime($endDate)) : '');
 
-		$spreadsheet->getActiveSheet()->setCellValue('A1', 'Periode: ' . (!empty($startDate) ? date('d/F/Y', strtotime($startDate)) : '') . ' s/d ' . (!empty($endDate) ? date('d/F/Y', strtotime($endDate)) : ''));
-		$spreadsheet->getActiveSheet()->setCellValue('A2', 'No');
-		$spreadsheet->getActiveSheet()->setCellValue('B2', 'ID Transaksi');
-		$spreadsheet->getActiveSheet()->setCellValue('C2', 'Tanggal');
-		$spreadsheet->getActiveSheet()->setCellValue('D2', 'Nama Barang');
-		$spreadsheet->getActiveSheet()->setCellValue('E2', 'Barcode');
-		$spreadsheet->getActiveSheet()->setCellValue('F2', 'QTY');
-		$spreadsheet->getActiveSheet()->setCellValue('G2', 'HPP');
-		$spreadsheet->getActiveSheet()->setCellValue('H2', 'Harga');
-		$spreadsheet->getActiveSheet()->setCellValue('I2', 'Sub Total');
+		$sheet->setCellValue('A1', $periodeLabel);
 
-		$spreadsheet->getActiveSheet()->getStyle('A2:I2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+		// Header
+		$sheet->setCellValue('A2', 'No');
+		$sheet->setCellValue('B2', 'Nama Barang');
+		$sheet->setCellValue('C2', 'Barcode');
+		$sheet->setCellValue('D2', 'QTY');
+		$sheet->setCellValue('E2', 'HPP');
+		$sheet->setCellValue('F2', 'Total');
 
+		$sheet->getStyle('A2:F2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+		// Data Rows
 		$row = 3;
-		$total_harga_semua = 0;
-		foreach ($pesanan as $key => $value) {
-			$subTotal = $value['jumlah_jual'] * $value['harga_saat_ini'];
+		$total_semua = 0;
 
-			$spreadsheet->getActiveSheet()->setCellValue('A' . $row, $key + 1);
-			$spreadsheet->getActiveSheet()->setCellValue('B' . $row, $value['id_pesanan']);
-			$spreadsheet->getActiveSheet()->setCellValue('C' . $row, date('d/M/Y', strtotime($value['tgl_pesanan'])));
-			$spreadsheet->getActiveSheet()->setCellValue('D' . $row, $value['nama_barang']);
-			$spreadsheet->getActiveSheet()->setCellValue('E' . $row, $value['barcode']);
-			$spreadsheet->getActiveSheet()->setCellValue('F' . $row, $value['jumlah_jual']);
-			$spreadsheet->getActiveSheet()->setCellValue('G' . $row, $value['hpp_barang']);
-			$spreadsheet->getActiveSheet()->setCellValue('H' . $row, $value['harga_saat_ini']);
-			$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $subTotal);
+		foreach ($result as $index => $item) {
+			$sheet->setCellValue('A' . $row, $index + 1);
+			$sheet->setCellValue('B' . $row, $item['nama_barang']);
+			$sheet->setCellValueExplicit('C' . $row, $item['barcode'], DataType::TYPE_STRING);
+			$sheet->setCellValue('D' . $row, $item['total_qty']);
+			$sheet->setCellValue('E' . $row, $item['hpp_barang']);
+			$sheet->setCellValue('F' . $row, $item['total_sub']);
 
-			$spreadsheet->getActiveSheet()->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+			$sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray([
 				'borders' => [
 					'allBorders' => [
 						'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -1836,23 +1928,25 @@ class Laporan extends CI_Controller
 				],
 			]);
 
-			$total_harga_semua += $subTotal;
+			$total_semua += $item['total_sub'];
 			$row++;
 		}
 
-		$spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(30);
-		$spreadsheet->getActiveSheet()->getColumnDimension('E')->setWidth(15);
+		// Total
+		$sheet->setCellValue('E' . $row, 'Total Penjualan');
+		$sheet->setCellValue('F' . $row, $total_semua);
 
-		$spreadsheet->getActiveSheet()->setCellValue('H' . $row, 'Total Penjualan');
-		$spreadsheet->getActiveSheet()->setCellValue('I' . $row, $total_harga_semua);
+		// Optional Formatting
+		$sheet->getColumnDimension('B')->setWidth(30);
+		$sheet->getColumnDimension('C')->setWidth(15);
 
-		$filename = 'penjualan_barang_report.xlsx';
-
+		// Output file
+		$filename = 'penjualan_barang_' . ($monthly ? 'monthly' : 'periode') . '.xlsx';
 		header('Content-type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 		header('Content-Disposition: attachment; filename="' . $filename . '"');
 		header('Cache-Control: max-age=0');
 
-		$writer = new PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+		$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 		$writer->save('php://output');
 	}
     // END REPORT 6
@@ -1891,19 +1985,20 @@ class Laporan extends CI_Controller
             ),
         );
 
-        $where = null;
+        $where = "tb_pesanan.status_pesanan != 'Dibatalkan'";
         if ($start || $end || $kasir || $metode) {
-            $where = "1"; // Menginisialisasi dengan 1 sehingga operasi AND berfungsi
 
             if ($start) {
-                // Menggunakan fungsi DATE() untuk memfilter hanya tanggal dan mengabaikan waktu
-                $where .= " AND DATE(tgl_pesanan) >= '" . $start . "'";
-            }
-
-            if ($end) {
-                // Menggunakan fungsi DATE() untuk memfilter hanya tanggal dan mengabaikan waktu
-                $where .= " AND DATE(tgl_pesanan) <= '" . $end . "'";
-            }
+				// Tambahkan jam:menit:detik awal
+				$startTime = $start . ' 00:00:01';
+				$where .= " AND tgl_pesanan >= '" . addslashes($startTime) . "'";
+			}
+		
+			if ($end) {
+				// Tambahkan jam:menit:detik akhir
+				$endTime = $end . ' 23:59:59';
+				$where .= " AND tgl_pesanan <= '" . addslashes($endTime) . "'";
+			}
 
             if ($kasir) {
                 $where .= " AND tb_pesanan.id_kasir = '" . $kasir . "'";
@@ -1979,14 +2074,19 @@ class Laporan extends CI_Controller
         $this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         $this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
         // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+		if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}
 
         // Tambahkan filter berdasarkan supplier
         if (!empty($kasir)) {
@@ -2025,14 +2125,19 @@ class Laporan extends CI_Controller
         $this->db->join('tb_kasir', 'tb_kasir.id_kasir = tb_pesanan.id_kasir', 'left');
         $this->db->join('tb_user', 'tb_user.id_user = tb_pesanan.id_user', 'left');
         $this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
         // Tambahkan filter berdasarkan tanggal terima
-        if (!empty($startDate) && !empty($endDate)) {
-            $this->db->where("tgl_pesanan BETWEEN '$startDate' AND '$endDate'");
-        } else if (!empty($startDate)) {
-            $this->db->where("tgl_pesanan >=", $startDate);
-        } else if (!empty($endDate)) {
-            $this->db->where("tgl_pesanan <=", $endDate);
-        }
+		if ($startDate || $endDate) {
+			if ($startDate) {
+				$startDateTime = date('Y-m-d 00:00:01', strtotime($startDate));
+				$this->db->where('tgl_pesanan >=', $startDateTime);
+			}
+		
+			if ($endDate) {
+				$endDateTime = date('Y-m-d 23:59:59', strtotime($endDate));
+				$this->db->where('tgl_pesanan <=', $endDateTime);
+			}
+		}
 
         // Tambahkan filter berdasarkan kasir
         if (!empty($kasir)) {
@@ -2067,7 +2172,7 @@ class Laporan extends CI_Controller
         $spreadsheet->getActiveSheet()->setCellValue('D2', 'Customer');
         $spreadsheet->getActiveSheet()->setCellValue('E2', 'NIK');
         $spreadsheet->getActiveSheet()->setCellValue('F2', 'Nama Barang');
-        $spreadsheet->getActiveSheet()->setCellValue('G2', 'Barcode');
+        $spreadsheet->getActiveSheet()->setCellValueExplicit('G2', 'Barcode', DataType::TYPE_STRING);
         $spreadsheet->getActiveSheet()->setCellValue('H2', 'QTY');
         $spreadsheet->getActiveSheet()->setCellValue('I2', 'Harga');
         $spreadsheet->getActiveSheet()->setCellValue('J2', 'Sub Total');
@@ -2089,7 +2194,7 @@ class Laporan extends CI_Controller
             $spreadsheet->getActiveSheet()->setCellValue('D' . $row, $value['nama_member'] ?? 'Walk In Customer');
 			$spreadsheet->getActiveSheet()->setCellValue('E' . $row, $value['nomor_induk'] ?? '-');
             $spreadsheet->getActiveSheet()->setCellValue('F' . $row, $value['nama_barang']);
-            $spreadsheet->getActiveSheet()->setCellValue('G' . $row, $value['barcode']);
+            $spreadsheet->getActiveSheet()->setCellValueExplicit('G' . $row, $value['barcode'], DataType::TYPE_STRING);
             $spreadsheet->getActiveSheet()->setCellValue('H' . $row, $value['jumlah_jual']);
             $spreadsheet->getActiveSheet()->setCellValue('I' . $row, $value['harga_saat_ini']);
             $spreadsheet->getActiveSheet()->setCellValue('J' . $row, $subTotal);
