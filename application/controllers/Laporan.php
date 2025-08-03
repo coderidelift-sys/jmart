@@ -1862,11 +1862,13 @@ class Laporan extends CI_Controller
 			tb_barang.barcode,
 			tb_barang.hpp_barang,
 			SUM(tb_pesanan_detail.jumlah_jual) as total_qty,
-			SUM(tb_pesanan_detail.harga_saat_ini * tb_pesanan_detail.jumlah_jual) as total_sub
+			SUM(tb_pesanan_detail.harga_saat_ini * tb_pesanan_detail.jumlah_jual) as total_sub,
+			tb_kategori.nama_kategori_brg
 		');
 		$this->db->from('tb_pesanan_detail');
 		$this->db->join('tb_pesanan', 'tb_pesanan.id_pesanan = tb_pesanan_detail.id_pesanan');
 		$this->db->join('tb_barang', 'tb_barang.id_brg = tb_pesanan_detail.id_brg');
+		$this->db->join('tb_kategori', 'tb_kategori.id_kategori_brg = tb_barang.id_kategori_brg');
 		$this->db->where('tb_pesanan.status_pesanan !=', 'Dibatalkan');
 
 		if ($monthly) {
@@ -1905,8 +1907,9 @@ class Laporan extends CI_Controller
 		$sheet->setCellValue('D2', 'QTY');
 		$sheet->setCellValue('E2', 'HPP');
 		$sheet->setCellValue('F2', 'Total');
+		$sheet->setCellValue('G2', 'Kategori');
 
-		$sheet->getStyle('A2:F2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+		$sheet->getStyle('A2:G2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
 		// Data Rows
 		$row = 3;
@@ -1919,8 +1922,9 @@ class Laporan extends CI_Controller
 			$sheet->setCellValue('D' . $row, $item['total_qty']);
 			$sheet->setCellValue('E' . $row, $item['hpp_barang']);
 			$sheet->setCellValue('F' . $row, $item['total_sub']);
+			$sheet->setCellValue('G' . $row, $item['nama_kategori_brg']);
 
-			$sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray([
+			$sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
 				'borders' => [
 					'allBorders' => [
 						'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
