@@ -41,13 +41,15 @@ class Datatable_model extends CI_Model
     }
 
     public function count_all($table, $where = null)
-    {
-        if ($where) {
-            $this->db->where($where);
-        }
+	{
+		$this->db->from($table);
 
-        return $this->db->count_all($table);
-    }
+		if ($where) {
+			$this->db->where($where);
+		}
+
+		return $this->db->count_all_results(); // ✅ menghitung berdasarkan kondisi
+	}
 
     public function count_filtered($table, $columns, $joins = array(), $filter = array(), $searchValue = null, $where = null, $order = array())
     {

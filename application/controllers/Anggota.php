@@ -235,21 +235,31 @@ class Anggota extends CI_Controller
 
         $where = "level = 'User'"; // Kondisi default
 
-        if ($nama_member) {
-			if($nama_member == 'belum'){
-				$where .= " AND updated_at IS NULL
-				AND id_user NOT IN (
-                	SELECT id_user FROM tb_user_alamat
-            	)";
-			} else if($nama_member == 'sudah'){
-				$where .= " AND updated_at IS NOT NULL
-				AND id_user IN (
-                	SELECT id_user FROM tb_user_alamat
-            	)";
-			} else {
-				$where .= " AND nama_member LIKE '%" . $nama_member . "%'";
+        if (!empty($nama_member)) {
+			$nama_member = trim($nama_member); // buang spasi ekstra
+		
+			switch ($nama_member) {
+				case 'belum':
+					$where .= " AND updated_at IS NULL AND id_user NOT IN (SELECT id_user FROM tb_user_alamat)";
+					break;
+		
+				case 'sudah':
+					$where .= " AND updated_at IS NOT NULL AND id_user IN (SELECT id_user FROM tb_user_alamat)";
+					break;
+
+				case 'parsial':
+					$where .= " AND (
+						(updated_at IS NULL AND id_user IN (SELECT id_user FROM tb_user_alamat)) OR
+						(updated_at IS NOT NULL AND id_user NOT IN (SELECT id_user FROM tb_user_alamat))
+					)";
+					break;
+		
+				default:
+					$escapedNama = $this->db->escape_like_str($nama_member); // untuk mencegah SQL injection
+					$where .= " AND nama_member LIKE '%{$escapedNama}%'";
+					break;
 			}
-        }
+		}		
 
         if ($wa_member) {
             $where .= " AND wa_member LIKE '%" . $wa_member . "%'";
@@ -306,9 +316,11 @@ class Anggota extends CI_Controller
             $total_grand_total3 = ($query3->num_rows() > 0) ? $query3->row()->grand_total : 0;
 			$nama_member_label = $anggota->nama_member;
 			
-			$countAlamat = $this->db->get_where('tb_user_alamat', ['id_user' => $anggota->id_user])->num_rows();
-			if ($countAlamat < 0 || $anggota->updated_at == null) {
-				$nama_member_label = $nama_member_label . ' <small><span class="badge bg-danger-lt">Belum tambah alamat dan atau kata sandi</span></small>';
+			$isAlamatKosong = !$this->db->where('id_user', $anggota->id_user)->limit(1)->count_all_results('tb_user_alamat');
+			$isBelumUpdate = is_null($anggota->updated_at);
+
+			if ($isAlamatKosong || $isBelumUpdate) {
+				$nama_member_label .= ' <small><span class="badge bg-danger-lt">Belum tambah alamat dan/atau kata sandi</span></small>';
 			}
 
             $no++;
