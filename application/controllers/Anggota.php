@@ -241,6 +241,11 @@ class Anggota extends CI_Controller
 				AND id_user NOT IN (
                 	SELECT id_user FROM tb_user_alamat
             	)";
+			} else if($nama_member == 'sudah'){
+				$where .= " AND updated_at IS NOT NULL
+				AND id_user IN (
+                	SELECT id_user FROM tb_user_alamat
+            	)";
 			} else {
 				$where .= " AND nama_member LIKE '%" . $nama_member . "%'";
 			}

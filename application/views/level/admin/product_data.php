@@ -611,6 +611,18 @@
     }
 
 	function printLabel(productId) {
+		// BUKA popup SEGERA dari interaksi user → anti popup block
+		const popupWin = window.open('', '_blank', 'width=300,height=200');
+
+		if (!popupWin) {
+			alert('Popup diblokir oleh browser. Harap izinkan pop-up untuk mencetak label.');
+			return;
+		}
+
+		// Tampilkan loader sementara di popup
+		popupWin.document.write('<html><head><title>Mencetak...</title></head><body><p>Memuat label...</p></body></html>');
+		popupWin.document.close();
+
 		$.ajax({
 			url: '/product/cetak_label_produk/' + productId,
 			method: 'GET',
@@ -619,12 +631,11 @@
 				if (typeof showLoading === 'function') showLoading();
 			},
 			success: function (labelHtml) {
-				const popupWin = window.open('', '_blank', 'width=189,height=113');
-
 				popupWin.document.open();
-				popupWin.document.write(`${labelHtml}`);
+				popupWin.document.write(labelHtml);
 				popupWin.document.close();
 
+				// Setelah konten dan barcode siap, panggil print
 				popupWin.onload = function () {
 					const svg = popupWin.document.getElementById("barcode-print");
 					if (svg) {
@@ -637,11 +648,17 @@
 							displayValue: false
 						});
 					}
+
+					// Panggil print secara eksplisit setelah render
+					setTimeout(() => {
+						popupWin.focus();
+						popupWin.print();
+						popupWin.onafterprint = () => popupWin.close();
+					}, 300);
 				};
-				popupWin.print();
 			},
 			error: function () {
-				alert("Gagal memuat label");
+				popupWin.document.body.innerHTML = "<p style='color:red;'>Gagal memuat label</p>";
 			},
 			complete: function () {
 				if (typeof hideLoading === 'function') hideLoading();

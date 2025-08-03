@@ -24,7 +24,7 @@ date_default_timezone_set('Asia/Jakarta');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://localhost:8000';
+$config['base_url'] = 'http://localhost:8001';
 // $config['base_url'] = 'https://36d2-116-206-30-42.ngrok-free.app/auth';
 
 /*

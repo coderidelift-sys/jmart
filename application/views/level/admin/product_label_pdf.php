@@ -109,6 +109,22 @@
 		</div>
 	<?php endforeach; ?>
 
+	<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+	<!-- jQuery print plugin -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.print/1.6.0/jquery.print.min.js"></script>
+	<script>
+		$(document).ready(function() {
+			$('body').print({
+				mode: 'popup',
+				popClose: true,
+				popCloseDuration: 1000,
+				popCloseEasing: 'ease-in-out',
+				popCloseDelay: 1000,
+				popCloseEasing: 'ease-in-out',
+			});
+		});
+	</script>
+
 	<script>
 		document.addEventListener('DOMContentLoaded', () => {
 			document.querySelectorAll('svg[id^="barcode-"]').forEach(svg => {
